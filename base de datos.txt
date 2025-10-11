@@ -1,0 +1,78 @@
+1.2 Crear la base de datos
+Nombre: panda_truck
+
+Cotejamiento: utf8mb4_unicode_ci
+
+Haz clic en "Crear"
+
+1.3 Crear las tablas (Ejecutar este SQL):
+
+-- Conéctate a la base de datos panda_truck
+USE panda_truck;
+
+-- Tabla para mixes
+CREATE TABLE mixes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    dj VARCHAR(100) NOT NULL,
+    genre VARCHAR(50) NOT NULL,
+    plays INT DEFAULT 0,
+    downloads INT DEFAULT 0,
+    sizeMB INT,
+    duration VARCHAR(20),
+    url TEXT,
+    cover TEXT,
+    tracks TEXT,
+    date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla para videos
+CREATE TABLE videos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    dj VARCHAR(100) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    plays INT DEFAULT 0,
+    downloads INT DEFAULT 0,
+    duration VARCHAR(20),
+    sizeMB INT,
+    url TEXT,
+    cover TEXT,
+    date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla para DJs
+CREATE TABLE djs (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    genre VARCHAR(100),
+    city VARCHAR(100),
+    bio TEXT,
+    avatar TEXT,
+    socials TEXT,
+    mixes INT DEFAULT 0,
+    videos INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla para eventos
+CREATE TABLE events (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    date VARCHAR(50) NOT NULL,
+    time VARCHAR(20) NOT NULL,
+    place VARCHAR(255) NOT NULL,
+    status VARCHAR(20) DEFAULT 'activo',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla para configuraciones
+CREATE TABLE configurations (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    config_key VARCHAR(50) UNIQUE NOT NULL,
+    config_value TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

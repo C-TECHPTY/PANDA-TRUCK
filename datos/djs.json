@@ -1,0 +1,24 @@
+[
+    {
+        "id": 1,
+        "name": "DJ Panda",
+        "genre": "Salsa \/ Urbano",
+        "mixes": 5,
+        "videos": 3,
+        "city": "Ciudad de Panamá",
+        "bio": "DJ principal de Panda Truck Reloaded",
+        "avatar": "https:\/\/api.dicebear.com\/7.x\/identicon\/svg?seed=DJ Panda",
+        "socials": "https:\/\/instagram.com\/djpanda"
+    },
+    {
+        "id": 2,
+        "name": "Dj Nelpty",
+        "genre": "Urbano",
+        "city": "panama",
+        "bio": "",
+        "avatar": "",
+        "socials": "",
+        "mixes": 0,
+        "videos": 0
+    }
+]

@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía para DJs - Panda Truck Reloaded</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #e1261d;
+            --primary-hover: #c81e16;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .logo-custom {
+            text-align: center;
+            padding: 12px 0;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-bottom: 1px solid var(--primary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .logo-custom img {
+            max-height: 60px;
+            width: auto;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, .06);
+            backdrop-filter: saturate(120%) blur(8px);
+        }
+
+        .step-card {
+            background: rgba(38, 38, 38, 0.6);
+            border: 1px solid #404040;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .step-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-color);
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .benefit-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border: 1px solid #404040;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .benefit-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary-color);
+        }
+
+        .requirement-item {
+            background: rgba(38, 38, 38, 0.6);
+            border: 1px solid #404040;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .faq-item {
+            border-bottom: 1px solid #404040;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .faq-question {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .faq-answer.open {
+            max-height: 500px;
+            margin-top: 15px;
+        }
+
+        .genre-tag {
+            display: inline-block;
+            background: rgba(225, 38, 29, 0.2);
+            border: 1px solid var(--primary-color);
+            border-radius: 20px;
+            padding: 5px 15px;
+            margin: 5px;
+            font-size: 0.9rem;
+        }
+
+        .contact-form input,
+        .contact-form textarea {
+            background: rgba(38, 38, 38, 0.8);
+            border: 1px solid #404040;
+            border-radius: 12px;
+            padding: 12px 15px;
+            color: white;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .contact-form input:focus,
+        .contact-form textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(225, 38, 29, 0.2);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 12px;
+            padding: 12px 25px;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-whatsapp {
+            background-color: #25D366;
+            color: white;
+            border-radius: 12px;
+            padding: 12px 25px;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-whatsapp:hover {
+            background-color: #128C7E;
+            transform: translateY(-2px);
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--primary-color);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+
+        .back-to-top.show {
+            opacity: 1;
+        }
+
+        .requirement-check {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .requirement-check i {
+            color: var(--primary-color);
+            margin-right: 10px;
+        }
+
+        .warning-box {
+            background: rgba(225, 38, 29, 0.1);
+            border: 1px solid var(--primary-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .download-box {
+            background: rgba(38, 38, 38, 0.8);
+            border: 1px solid #404040;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .talent-requirement {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border: 1px solid var(--primary-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body class="bg-neutral-950 text-neutral-100">
+    <!-- LOGO PERSONALIZADO -->
+    <div class="logo-custom">
+        <a href="index.html"><img src="img/logo.png" alt="PANDA TRUCK RELOADED" /></a>
+    </div>
+
+    <!-- NAVEGACIÓN -->
+    <header class="sticky top-[73px] z-50 border-b border-neutral-800 glass">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <nav class="hidden md:flex items-center gap-6 text-sm text-neutral-300">
+                <a href="index.html" class="hover:text-white transition-colors">Inicio</a>
+                <a href="#beneficios" class="hover:text-white transition-colors">Beneficios</a>
+                <a href="#proceso" class="hover:text-white transition-colors">Cómo Participar</a>
+                <a href="#requisitos" class="hover:text-white transition-colors">Requisitos</a>
+                <a href="#branding" class="hover:text-white transition-colors">Branding</a>
+                <a href="#faq" class="hover:text-white transition-colors">Preguntas Frecuentes</a>
+                <a href="#legal" class="hover:text-white transition-colors">Aspectos Legales</a>
+                <a href="#contacto" class="hover:text-white transition-colors">Envíanos tu Mix</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="max-w-7xl mx-auto px-4 py-16 text-center">
+        <h1 class="text-4xl md:text-6xl font-extrabold mb-6">Guía para <span
+                class="text-[var(--primary-color)]">DJs</span></h1>
+        <p class="text-xl text-neutral-300 max-w-3xl mx-auto mb-8">Aprende cómo enviar tus mixes a Panda Truck Reloaded
+            y hacer crecer tu audiencia con nuestra plataforma profesional.</p>
+
+        <div class="flex flex-wrap justify-center gap-4 mb-12">
+            <span class="genre-tag">Salsa</span>
+            <span class="genre-tag">Reggaetón</span>
+            <span class="genre-tag">Urbano</span>
+            <span class="genre-tag">Merengue</span>
+            <span class="genre-tag">Bachata</span>
+            <span class="genre-tag">Electrónica</span>
+            <span class="genre-tag">Hip Hop</span>
+            <span class="genre-tag">Dembow</span>
+            <span class="genre-tag">Reggae</span>
+        </div>
+
+        <a href="#contacto" class="btn-whatsapp">
+            <i class="fab fa-whatsapp"></i> Escríbenos por WhatsApp
+        </a>
+    </section>
+
+    <!-- BENEFICIOS -->
+    <section id="beneficios" class="max-w-7xl mx-auto px-4 py-16">
+        <h2 class="text-3xl font-bold text-center mb-12">Beneficios de Ser DJ en Panda Truck</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="benefit-card">
+                <div class="text-3xl text-[var(--primary-color)] mb-4">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-2">Reportes de Audiencia</h3>
+                <p class="text-neutral-400">Recibe reportes semanales con estadísticas detalladas de reproducciones y
+                    descargas de tus mixes.</p>
+            </div>
+
+            <div class="benefit-card">
+                <div class="text-3xl text-[var(--primary-color)] mb-4">
+                    <i class="fas fa-certificate"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-2">Certificación de Calidad</h3>
+                <p class="text-neutral-400">Tu contenido será verificado y certificado por nuestro equipo de expertos en
+                    música.</p>
+            </div>
+
+            <div class="benefit-card">
+                <div class="text-3xl text-[var(--primary-color)] mb-4">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-2">Audiencia Real</h3>
+                <p class="text-neutral-400">Conecta con miles de oyentes reales interesados en música panameña y latina.
+                </p>
+            </div>
+
+            <div class="benefit-card">
+                <div class="text-3xl text-[var(--primary-color)] mb-4">
+                    <i class="fas fa-music"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-2">Producción Musical</h3>
+                <p class="text-neutral-400">Asesoría y apoyo en la producción y mejora de tus mezclas y sets.</p>
+            </div>
+
+            <div class="benefit-card">
+                <div class="text-3xl text-[var(--primary-color)] mb-4">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-2">Perfil Personalizado</h3>
+                <p class="text-neutral-400">Crea tu perfil de DJ con biografía, redes sociales y todos tus mixes
+                    organizados.</p>
+            </div>
+
+            <div class="benefit-card">
+                <div class="text-3xl text-[var(--primary-color)] mb-4">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-2">Completamente Gratuito</h3>
+                <p class="text-neutral-400">Enviar contenido es 100% gratuito. Sin costos ocultos ni comisiones.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- REQUISITO DE TALENTO -->
+    <section class="max-w-7xl mx-auto px-4">
+        <div class="talent-requirement">
+            <div class="flex items-start">
+                <div class="text-3xl text-[var(--primary-color)] mr-4">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-2">Requisito de Talento y Calidad</h3>
+                    <p class="text-neutral-300">Buscamos DJs con buen sentido y oído para mezclar. Tu material pasará
+                        por filtros auditivos profesionales que evaluarán la calidad de tus mezclas, transiciones y
+                        selección musical. Valoramos el talento para crear mixes y sets DJ que demuestren creatividad y
+                        profesionalismo.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PROCESO PARA PARTICIPAR -->
+    <section id="proceso" class="max-w-7xl mx-auto px-4 py-16 bg-neutral-900 rounded-3xl my-10">
+        <h2 class="text-3xl font-bold text-center mb-12">Cómo Participar en 3 Pasos Sencillos</h2>
+
+        <div class="space-y-8">
+            <div class="step-card p-6 flex items-start">
+                <div class="step-number">1</div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-2">Prepara Tu Mix</h3>
+                    <p class="text-neutral-400 mb-4">Asegúrate de que tu mix cumple con todos los requisitos técnicos y
+                        de branding.</p>
+                    <ul class="text-neutral-400 list-disc list-inside space-y-1">
+                        <li>El mix debe incluir el ponche de Panda Truck</li>
+                        <li>La portada debe llevar el logo oficial</li>
+                        <li>Calidad de audio mínima 192 kbps</li>
+                        <li>Duración: 30 minutos mínimo, 1 hora máximo</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-card p-6 flex items-start">
+                <div class="step-number">2</div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-2">Sube a WeTransfer o Google Drive</h3>
+                    <p class="text-neutral-400 mb-4">Sube tu mix y portada a una plataforma de transferencia de
+                        archivos.</p>
+                    <ul class="text-neutral-400 list-disc list-inside space-y-1">
+                        <li>WeTransfer (recomendado para archivos grandes)</li>
+                        <li>Google Drive (comparte el enlace con permisos de visualización)</li>
+                        <li>Incluye ambos archivos: mix + portada</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-card p-6 flex items-start">
+                <div class="step-number">3</div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-2">Envíanos la Información</h3>
+                    <p class="text-neutral-400 mb-4">Comunícate por WhatsApp con toda la información requerida.</p>
+                    <ul class="text-neutral-400 list-disc list-inside space-y-1">
+                        <li>Envía el link de descarga</li>
+                        <li>Incluye tu nombre artístico y información personal</li>
+                        <li>Adjunta tu foto como DJ</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECCIÓN BRANDING -->
+    <section id="branding" class="max-w-7xl mx-auto px-4 py-16">
+        <h2 class="text-3xl font-bold text-center mb-12">Branding y Materiales</h2>
+
+        <div class="download-box">
+            <h3 class="text-xl font-semibold mb-4 text-[var(--primary-color)]">Descarga los Elementos de Branding</h3>
+            <p class="text-neutral-300 mb-4">Para que tu mix sea aprobado, debes incluir estos elementos obligatorios:
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-semibold mb-2">Logo de Panda Truck</h4>
+                    <p class="text-neutral-400 mb-3">Debe aparecer en la portada de tu mix</p>
+                    <a href="https://f005.backblazeb2.com/file/Doc-panda/LOGO+PANDA.rar"
+                        class="btn-primary inline-flex items-center gap-2">
+                        <i class="fas fa-download"></i> Descargar Logo
+                    </a>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold mb-2">Ponche de Audio</h4>
+                    <p class="text-neutral-400 mb-3">Debe incluirse al inicio de tu mix</p>
+                    <a href="#" class="btn-primary inline-flex items-center gap-2">
+                        <i class="fas fa-download"></i> Descargar Ponche
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="warning-box mt-8">
+            <div class="flex items-start">
+                <i class="fas fa-exclamation-triangle text-[var(--primary-color)] mt-1 mr-3"></i>
+                <div>
+                    <h4 class="font-semibold mb-2">Importante</h4>
+                    <p class="text-neutral-300">Los mixes y videos que no cumplan con estos requisitos de branding (logo
+                        y ponche de Panda Truck) <strong>no serán publicados</strong> en la plataforma.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- REQUISITOS TÉCNICOS -->
+    <section id="requisitos" class="max-w-7xl mx-auto px-4 py-16">
+        <h2 class="text-3xl font-bold text-center mb-12">Requisitos Obligatorios</h2>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+                <h3 class="text-xl font-semibold mb-4 text-[var(--primary-color)]">Para Mixes de Audio</h3>
+
+                <div class="requirement-item">
+                    <div class="requirement-check">
+                        <i class="fas fa-music"></i>
+                        <span><strong>Formato de Audio:</strong> MP3 (192 kbps mínimo, 320 kbps recomendado)</span>
+                    </div>
+                </div>
+
+                <div class="requirement-item">
+                    <div class="requirement-check">
+                        <i class="fas fa-image"></i>
+                        <span><strong>Portada:</strong> 1400x1400 px, formato JPG/PNG</span>
+                    </div>
+                </div>
+
+                <div class="requirement-item">
+                    <div class="requirement-check">
+                        <i class="fas fa-tag"></i>
+                        <span><strong>Branding:</strong> Logo de Panda Truck en la portada</span>
+                    </div>
+                </div>
+
+                <div class="requirement-item">
+                    <div class="requirement-check">
+                        <i class="fas fa-volume-up"></i>
+                        <span><strong>Ponche:</strong> Mix debe incluir el ponche de Panda Truck</span>
+                    </div>
+                </div>
+
+                <div class="requirement-item">
+                    <div class="requirement-check">
+                        <i class="fas fa-clock"></i>
+                        <span><strong>Duración:</strong> 30 minutos mínimo, 1 hora máximo</span>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold mb-4 text-[var(--primary-color)]">Para Videos</h3>
+
+                <div class="requirement-item">
+                    <div class="requirement-check">
+                        <i class="fas fa-video"></i>
+                        <span><strong>Formato de Video:</strong> MP4 (720p mínimo, 1080p recomendado)</span>
+                    </div>
+                </div>
+
+                <div class="requirement-item">
+                    <div class="requirement-check">
+                        <i class="fas fa-water"></i>
+                        <span><strong>Marca de Agua:</strong> Logo de Panda Truck visible</span>
+                    </div>
+                </div>
+
+                <div class="requirement-item">
+                    <div class="requirement-check">
+                        <i class="fas fa-film"></i>
+                        <span><strong>Ponche:</strong> Video debe incluir ponche de Panda Truck</span>
+                    </div>
+                </div>
+
+                <div class="requirement-item">
+                    <div class="requirement-check">
+                        <i class="fas fa-clock"></i>
+                        <span><strong>Duración:</strong> 30 minutos mínimo, 1 hora máximo</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECCIÓN LEGAL PARA DJs -->
+    <section id="legal" class="max-w-4xl mx-auto px-4 py-16">
+        <h2 class="text-3xl font-bold text-center mb-12">Aspectos Legales Importantes</h2>
+
+        <div class="bg-neutral-800 rounded-2xl p-8">
+            <div class="flex items-start mb-6">
+                <div class="text-2xl text-[var(--primary-color)] mr-4">
+                    <i class="fas fa-balance-scale"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">Términos Legales de Publicación</h3>
+                    <div class="space-y-4 text-neutral-300">
+                        <p><strong>Panda Truck Reloaded</strong> opera como plataforma de promoción musical autorizada.
+                            Al enviar tu material, confirmas que:</p>
+
+                        <ul class="list-disc list-inside space-y-2 ml-4">
+                            <li>Eres el titular de los derechos del contenido o tienes autorización para distribuirlo
+                            </li>
+                            <li>Autorizas la publicación no comercial en nuestra plataforma</li>
+                            <li>Conservas todos los derechos sobre tu obra musical</li>
+                            <li>Aceptas que el contenido sea disponible para descarga personal</li>
+                        </ul>
+
+                        <div class="bg-neutral-700/50 rounded-lg p-4 mt-4">
+                            <h4 class="font-semibold text-[var(--primary-color)] mb-2">📝 Derechos y Responsabilidades
+                            </h4>
+                            <p class="text-sm">
+                                <strong>Tu conservas:</strong> Derechos de autor, control comercial, decisión sobre
+                                licencias<br>
+                                <strong>Nosotros ofrecemos:</strong> Plataforma de difusión, reportes de audiencia,
+                                promoción<br>
+                                <strong>El público puede:</strong> Descargar para uso personal, compartir
+                                atribuyéndote<br>
+                                <strong>Prohibido:</strong> Uso comercial por terceros sin tu autorización expresa
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-neutral-700 pt-6">
+                <h4 class="font-semibold mb-3">✅ Autorización que nos concedes:</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div class="flex items-start">
+                        <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                        <span>Publicación en plataforma Panda Truck Reloaded</span>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                        <span>Distribución para descarga personal de usuarios</span>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                        <span>Uso promocional en nuestras redes sociales</span>
+                    </div>
+                    <div class="flex items-start">
+                        <i class="fas fa-check text-green-400 mt-1 mr-2"></i>
+                        <span>Inclusión en reportes y estadísticas de audiencia</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-yellow-900/20 border border-yellow-700/30 rounded-lg p-4 mt-6">
+                <div class="flex items-start">
+                    <i class="fas fa-exclamation-triangle text-yellow-400 mt-1 mr-3"></i>
+                    <div>
+                        <h4 class="font-semibold text-yellow-300 mb-2">Importante: Control Total del Artista</h4>
+                        <p class="text-yellow-200 text-sm">
+                            Siempre mantienes el control sobre tu música. Si en cualquier momento deseas retirar tu
+                            contenido
+                            de la plataforma, solo debes solicitarlo y será eliminado inmediatamente. Operamos bajo el
+                            principio
+                            de que los derechos siempre pertenecen al creador.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTRATACIONES PANDA TRUCK -->
+    <section class="max-w-7xl mx-auto px-4 py-8">
+        <div class="bg-gradient-to-r from-[var(--primary-color)] to-[var(--primary-hover)] rounded-2xl p-8 text-center">
+            <h3 class="text-2xl font-bold mb-4">¿Necesitas el Panda Truck para tu evento?</h3>
+            <p class="text-white mb-6">Contrata nuestra unidad móvil para fiestas, eventos corporativos o grabaciones
+                especiales.</p>
+            <a href="https://wa.me/50762115209?text=Hola,%20me%20interesa%20contratar%20el%20Panda%20Truck%20para%20un%20evento"
+                class="btn-whatsapp bg-white text-green-600 hover:bg-gray-100">
+                <i class="fab fa-whatsapp"></i> Contrataciones: +507 6211-5209
+            </a>
+        </div>
+    </section>
+
+    <!-- SECCIÓN DE CONTACTO -->
+    <section id="contacto" class="max-w-7xl mx-auto px-4 py-16 bg-neutral-900 rounded-3xl my-10">
+        <h2 class="text-3xl font-bold text-center mb-12">Envía Tu Mix</h2>
+
+        <div class="max-w-2xl mx-auto">
+            <div class="bg-neutral-800 rounded-2xl p-8 mb-8">
+                <h3 class="text-xl font-semibold mb-4 text-[var(--primary-color)]">Información Requerida</h3>
+                <p class="text-neutral-300 mb-6">Al contactarnos, por favor incluye toda esta información:</p>
+
+                <ul class="text-neutral-300 space-y-3">
+                    <li class="flex items-start">
+                        <i class="fas fa-user mt-1 mr-3 text-[var(--primary-color)]"></i>
+                        <span><strong>Nombre artístico como DJ</strong></span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-music mt-1 mr-3 text-[var(--primary-color)]"></i>
+                        <span><strong>Géneros musicales principales</strong></span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-link mt-1 mr-3 text-[var(--primary-color)]"></i>
+                        <span><strong>Redes sociales (Instagram, Facebook, etc.)</strong></span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-file-alt mt-1 mr-3 text-[var(--primary-color)]"></i>
+                        <span><strong>Pequeña descripción/biografía tuya</strong></span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-camera mt-1 mr-3 text-[var(--primary-color)]"></i>
+                        <span><strong>Foto tuya como DJ (de cara)</strong></span>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fas fa-download mt-1 mr-3 text-[var(--primary-color)]"></i>
+                        <span><strong>Link de WeTransfer/Google Drive con tu mix y portada</strong></span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="text-center">
+                <h3 class="text-xl font-semibold mb-4">Contacta por WhatsApp</h3>
+                <p class="text-neutral-300 mb-6">Escríbenos al siguiente número para enviar tu material:</p>
+
+                <a href="https://wa.me/50762115209?text=Hola,%20me%20interesa%20enviar%20mi%20mix%20a%20Panda%20Truck%20Reloaded"
+                    class="btn-whatsapp text-lg">
+                    <i class="fab fa-whatsapp"></i> +507 6211-5209
+                </a>
+
+                <p class="text-neutral-400 mt-4 text-sm">Haz clic para abrir WhatsApp con un mensaje predefinido</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- PREGUNTAS FRECUENTES -->
+    <section id="faq" class="max-w-4xl mx-auto px-4 py-16">
+        <h2 class="text-3xl font-bold text-center mb-12">Preguntas Frecuentes</h2>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(1)">
+                <h3 class="text-lg font-semibold">¿Cuánto tiempo toma la revisión de mi mix?</h3>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer" id="faq-answer-1">
+                <p class="text-neutral-400">La revisión toma entre 2-3 días hábiles. Verificamos la calidad del audio,
+                    que cumpla con los requisitos de branding y el contenido.</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(2)">
+                <h3 class="text-lg font-semibold">¿Puedo enviar mixes ya publicados en otras plataformas?</h3>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer" id="faq-answer-2">
+                <p class="text-neutral-400">Sí, siempre y cuando tengas los derechos del contenido y agregues el
+                    branding requerido de Panda Truck (logo en portada y ponche en el audio).</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(3)">
+                <h3 class="text-lg font-semibold">¿Hay algún costo por publicar mis mixes?</h3>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer" id="faq-answer-3">
+                <p class="text-neutral-400">No, la publicación es completamente gratuita. Panda Truck Reloaded no cobra
+                    por subir contenido a la plataforma.</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(4)">
+                <h3 class="text-lg font-semibold">¿Qué pasa si mi mix no cumple con los requisitos?</h3>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer" id="faq-answer-4">
+                <p class="text-neutral-400">Te contactaremos para indicarte qué ajustes necesitas realizar. Una vez
+                    corregidos, podrás volver a enviar el material para su revisión.</p>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFAQ(5)">
+                <h3 class="text-lg font-semibold">¿Recibiré estadísticas de mis mixes?</h3>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="faq-answer" id="faq-answer-5">
+                <p class="text-neutral-400">Sí, mensualmente recibirás un reporte con las estadísticas de
+                    reproducciones, descargas y engagement de tus mixes publicados.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- BOTÓN FLOTANTE WHATSAPP -->
+    <div class="fixed bottom-6 left-6 z-50">
+        <a href="https://wa.me/50762115209?text=Hola,%20me%20interesa%20enviar%20mi%20mix%20a%20Panda%20Truck%20Reloaded"
+            class="btn-whatsapp flex items-center gap-2">
+            <i class="fab fa-whatsapp"></i>
+            <span class="hidden sm:inline">Enviar Mix</span>
+        </a>
+    </div>
+
+    <!-- BOTÓN VOLVER ARRIBA -->
+    <div class="back-to-top" id="backToTop" onclick="scrollToTop()">
+        <i class="fas fa-chevron-up"></i>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-neutral-800 mt-16">
+        <div class="max-w-7xl mx-auto px-4 py-8 text-center">
+            <div class="logo-custom justify-center border-none pt-0">
+                <img src="img/logo.png" alt="PANDA TRUCK RELOADED" class="max-h-12" />
+            </div>
+
+            <p class="text-neutral-400 mt-4">Plataforma oficial para DJs de Panda Truck Reloaded</p>
+            <p class="text-neutral-500 text-sm mt-2">© 2024 Panda Truck Reloaded. Todos los derechos reservados.</p>
+
+            <div class="flex justify-center gap-4 mt-6">
+                <a href="#" class="text-neutral-400 hover:text-white transition-colors">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="#" class="text-neutral-400 hover:text-white transition-colors">
+                    <i class="fab fa-facebook"></i>
+                </a>
+                <a href="#" class="text-neutral-400 hover:text-white transition-colors">
+                    <i class="fab fa-youtube"></i>
+                </a>
+                <a href="#" class="text-neutral-400 hover:text-white transition-colors">
+                    <i class="fab fa-tiktok"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Función para mostrar/ocultar el botón "Volver arriba"
+        window.onscroll = function () {
+            const backToTop = document.getElementById('backToTop');
+            if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+                backToTop.classList.add('show');
+            } else {
+                backToTop.classList.remove('show');
+            }
+        };
+
+        // Función para volver al inicio
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Función para alternar las preguntas frecuentes
+        function toggleFAQ(id) {
+            const answer = document.getElementById(`faq-answer-${id}`);
+            const icon = answer.previousElementSibling.querySelector('i');
+
+            answer.classList.toggle('open');
+            icon.classList.toggle('fa-chevron-down');
+            icon.classList.toggle('fa-chevron-up');
+        }
+
+        // Smooth scroll para enlaces internos
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 100,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>En Construcción - Panda Truck Reloaded</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎧</text></svg>" type="image/svg+xml">
+    
+    <style>
+        :root {
+            --primary-color: #e1261d;
+            --primary-hover: #c81e16;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #0a0a0a;
+            color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Fondo granulizado profesional */
+        .noise-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                /* Capa base oscura */
+                radial-gradient(circle at 20% 30%, rgba(225, 38, 29, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(225, 38, 29, 0.1) 0%, transparent 50%),
+                /* Efecto de ruido/granulado */
+                repeating-radial-gradient(circle at 50% 50%, 
+                    rgba(255,255,255,0.03) 0%, 
+                    rgba(255,255,255,0.03) 1px, 
+                    transparent 1px, 
+                    transparent 10px);
+            background-size: 100% 100%, 100% 100%, 100px 100px;
+            z-index: -2;
+            opacity: 0.4;
+        }
+        
+        /* Efecto de partículas sutiles */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+        }
+        
+        /* Crear partículas dinámicamente */
+        .particle:nth-child(1) { width: 2px; height: 2px; top: 20%; left: 10%; animation-delay: 0s; }
+        .particle:nth-child(2) { width: 1px; height: 1px; top: 60%; left: 80%; animation-delay: 2s; }
+        .particle:nth-child(3) { width: 3px; height: 3px; top: 40%; left: 30%; animation-delay: 4s; }
+        .particle:nth-child(4) { width: 1px; height: 1px; top: 80%; left: 50%; animation-delay: 6s; }
+        .particle:nth-child(5) { width: 2px; height: 2px; top: 10%; left: 70%; animation-delay: 8s; }
+        .particle:nth-child(6) { width: 1px; height: 1px; top: 90%; left: 20%; animation-delay: 10s; }
+        .particle:nth-child(7) { width: 3px; height: 3px; top: 30%; left: 90%; animation-delay: 12s; }
+        .particle:nth-child(8) { width: 2px; height: 2px; top: 70%; left: 40%; animation-delay: 14s; }
+        
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0); }
+            25% { transform: translateY(-20px) translateX(10px); }
+            50% { transform: translateY(-40px) translateX(20px); }
+            75% { transform: translateY(-20px) translateX(10px); }
+            100% { transform: translateY(0) translateX(0); }
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 800px;
+            padding: 2rem;
+            z-index: 1;
+            position: relative;
+        }
+        
+        .logo-container {
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        
+        .logo-image {
+            max-width: 300px;
+            width: 100%;
+            height: auto;
+            margin: 0 auto;
+            display: block;
+            filter: drop-shadow(0 0 15px rgba(225, 38, 29, 0.7));
+        }
+        
+        .reloaded-text {
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            font-size: 3rem;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 1rem;
+            position: relative;
+            animation: pulse 2s infinite;
+        }
+        
+        .reloaded-text::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--primary-color);
+            animation: glow 2s infinite;
+        }
+        
+        .loading-animation {
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+        
+        .equalizer {
+            display: flex;
+            align-items: flex-end;
+            height: 40px;
+            gap: 4px;
+        }
+        
+        .bar {
+            width: 6px;
+            background: var(--primary-color);
+            border-radius: 3px;
+            animation: equalizer 1.5s ease infinite;
+        }
+        
+        .bar:nth-child(1) { animation-delay: 0s; height: 10px; }
+        .bar:nth-child(2) { animation-delay: 0.1s; height: 20px; }
+        .bar:nth-child(3) { animation-delay: 0.2s; height: 30px; }
+        .bar:nth-child(4) { animation-delay: 0.3s; height: 40px; }
+        .bar:nth-child(5) { animation-delay: 0.4s; height: 30px; }
+        .bar:nth-child(6) { animation-delay: 0.5s; height: 20px; }
+        .bar:nth-child(7) { animation-delay: 0.6s; height: 10px; }
+        
+        .message {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            color: #ccc;
+            line-height: 1.5;
+        }
+        
+        .highlight {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+        
+        .countdown {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .countdown-item {
+            background: rgba(38, 38, 38, 0.8);
+            border-radius: 10px;
+            padding: 1rem;
+            min-width: 80px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .countdown-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .countdown-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #999;
+        }
+        
+        .contact-info {
+            margin-top: 2rem;
+            font-size: 1rem;
+            color: #999;
+            line-height: 1.6;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .social-link {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            color: var(--primary-color);
+            text-decoration: none;
+            padding: 0.8rem 1.2rem;
+            border: 1px solid rgba(225, 38, 29, 0.3);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            background: rgba(225, 38, 29, 0.1);
+            min-width: 240px;
+            box-sizing: border-box;
+        }
+        
+        .social-link:hover {
+            background: rgba(225, 38, 29, 0.2);
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+        
+        .social-icon {
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+            filter: invert(32%) sepia(76%) saturate(4274%) hue-rotate(347deg) brightness(91%) contrast(89%);
+        }
+        
+        .social-text {
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+            text-align: left;
+        }
+        
+        .contact-info a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .contact-info a:hover {
+            text-decoration: underline;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px var(--primary-color); }
+            50% { box-shadow: 0 0 20px var(--primary-color); }
+            100% { box-shadow: 0 0 5px var(--primary-color); }
+        }
+        
+        @keyframes equalizer {
+            0%, 100% { transform: scaleY(0.5); }
+            50% { transform: scaleY(1); }
+        }
+        
+        @media (max-width: 768px) {
+            .logo-image {
+                max-width: 250px;
+            }
+            
+            .reloaded-text {
+                font-size: 2.5rem;
+            }
+            
+            .message {
+                font-size: 1.2rem;
+            }
+            
+            .countdown-item {
+                min-width: 60px;
+                padding: 0.8rem;
+            }
+            
+            .countdown-number {
+                font-size: 1.5rem;
+            }
+            
+            .countdown {
+                flex-wrap: wrap;
+            }
+            
+            .social-links {
+                flex-direction: column;
+                align-items: center;
+                gap: 0.8rem;
+            }
+            
+            .social-link {
+                width: 100%;
+                max-width: 280px;
+                min-width: auto;
+                padding: 0.7rem 1rem;
+            }
+            
+            .social-text {
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .social-link {
+                padding: 0.6rem 0.8rem;
+            }
+            
+            .social-text {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Fondo granulizado -->
+    <div class="noise-background"></div>
+    
+    <!-- Partículas flotantes -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+    
+    <div class="container">
+        <div class="logo-container">
+            <!-- Logo real desde tu carpeta img -->
+            <img src="img/logo-Panda.png" alt="PANDA TRUCK RELOADED" class="logo-image">
+            
+            <!-- Texto "RELOADED" animado adicional -->
+            <div class="reloaded-text">RELOADED</div>
+        </div>
+        
+        <div class="loading-animation">
+            <div class="equalizer">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+        </div>
+        
+        <div class="message">
+            Estamos trabajando en algo <span class="highlight">especial</span> para los amantes del sonido.<br>
+            Pronto tendremos los mejores <span class="highlight">mixes DJ</span> y experiencias <span class="highlight">Sound Car</span>.
+        </div>
+        
+        <div class="countdown">
+            <div class="countdown-item">
+                <div class="countdown-number" id="days">00</div>
+                <div class="countdown-label">Días</div>
+            </div>
+            <div class="countdown-item">
+                <div class="countdown-number" id="hours">00</div>
+                <div class="countdown-label">Horas</div>
+            </div>
+            <div class="countdown-item">
+                <div class="countdown-number" id="minutes">00</div>
+                <div class="countdown-label">Minutos</div>
+            </div>
+            <div class="countdown-item">
+                <div class="countdown-number" id="seconds">00</div>
+                <div class="countdown-label">Segundos</div>
+            </div>
+        </div>
+        
+        <div class="contact-info">
+            Mientras tanto, síguenos en nuestras redes sociales o contáctanos:
+            
+            <div class="social-links">
+                <a href="https://instagram.com/jimmy_el_pandatruck" target="_blank" class="social-link">
+                    <img src="https://img.icons8.com/?size=100&id=wrwXlOVAFfeY&format=png&color=000000" alt="Instagram" class="social-icon">
+                    <span class="social-text">@jimmy_el_pandatruck</span>
+                </a>
+                
+                <a href="mailto:info@pandatruckreloaded.com" class="social-link">
+                    <img src="https://img.icons8.com/?size=100&id=2FxDGcmY6mE9&format=png&color=000000" alt="Email" class="social-icon">
+                    <span class="social-text">info@pandatruckreloaded.com</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // CONFIGURACIÓN FÁCIL - CAMBIA ESTOS NÚMEROS
+        const diasParaSumar = 30; // Cambia este número por los días que quieras
+        
+        // Fecha objetivo (hoy + los días que configuraste)
+        const hoy = new Date();
+        const targetDate = new Date();
+        targetDate.setDate(hoy.getDate() + diasParaSumar);
+        targetDate.setHours(23, 59, 59, 0);
+        const targetTime = targetDate.getTime();
+        
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const timeLeft = targetTime - now;
+            
+            if (timeLeft < 0) {
+                document.getElementById('days').textContent = '00';
+                document.getElementById('hours').textContent = '00';
+                document.getElementById('minutes').textContent = '00';
+                document.getElementById('seconds').textContent = '00';
+                return;
+            }
+            
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            document.getElementById('days').textContent = days.toString().padStart(2, '0');
+            document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+            document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+        }
+        
+        // Actualizar el contador cada segundo
+        setInterval(updateCountdown, 1000);
+        updateCountdown(); // Llamar una vez al cargar
+    </script>
+</body>
+</html>

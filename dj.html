@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Perfil del DJ – Panda Truck Reloaded</title>
+
+  <!-- Favicon -->
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎧</text></svg>"
+    type="image/svg+xml">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --primary-color: #e1261d;
+      --primary-hover: #c81e16;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, .06);
+      backdrop-filter: saturate(120%) blur(8px);
+    }
+
+    .logo-custom {
+      text-align: center;
+      padding: 12px 0;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      border-bottom: 1px solid var(--primary-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .logo-custom img {
+      max-height: 60px;
+      width: auto;
+    }
+
+    .cover-image {
+      transition: transform 0.3s ease;
+    }
+
+    .mix-card:hover .cover-image {
+      transform: scale(1.05);
+    }
+
+    .play-button {
+      transition: all 0.2s ease;
+    }
+
+    .play-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px var(--primary-color);
+    }
+
+    .player {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 70px;
+      background: #0f0f10;
+      border-top: 1px solid #242424;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      z-index: 999;
+    }
+
+    .player .now {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .player .now .t {
+      font-weight: 700;
+      font-size: .95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player .now .s {
+      font-size: .8rem;
+      color: #bbb;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player button {
+      background: #1f1f1f;
+      border: 1px solid #2c2c2c;
+      color: #eee;
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    .player button:hover {
+      background: #2a2a2a;
+    }
+
+    .line-clamp-1 {
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .notification {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--primary-color);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .3);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+
+    .notification.show {
+      opacity: 1;
+    }
+
+    .badge {
+      font-size: .72rem;
+      background: #262626;
+      border: 1px solid #333;
+      border-radius: 999px;
+      padding: .1rem .5rem;
+      color: #cfcfcf;
+    }
+
+    .btn {
+      padding: .5rem .75rem;
+      border-radius: .75rem;
+      font-size: .875rem;
+      background: #171717;
+      border: 1px solid #27272a;
+      color: #e5e5e5;
+    }
+
+    .btn:hover {
+      background: #262626;
+    }
+
+    .btn-primary {
+      padding: .5rem .75rem;
+      border-radius: 1rem;
+      font-size: .875rem;
+      background: var(--primary-color);
+      color: #fff;
+      border: 1px solid rgba(0, 0, 0, .2);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-neutral-950 text-neutral-100">
+  <!-- TOP BAR -->
+  <div class="logo-custom">
+    <a href="index.html"><img src="img/logo.png" alt="Panda Truck Reloaded" class="max-h-12" /></a>
+  </div>
+
+  <!-- NAV -->
+  <header class="sticky top-[60px] z-50 border-b border-neutral-800 glass">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <nav class="hidden md:flex items-center gap-6 text-sm text-neutral-300">
+        <a href="index.html" class="hover:text-white transition-colors">Inicio</a>
+        <a href="mixes.html" class="hover:text-white transition-colors">Mixes & Videos</a>
+        <span class="text-white font-semibold">Perfil del DJ</span>
+      </nav>
+      <div class="flex items-center gap-3">
+        <a href="GuíaDJs.html"
+          class="px-3 py-1.5 rounded-xl bg-[var(--primary-color)] text-white font-medium hover:bg-[var(--primary-hover)] transition-colors hidden md:block">Guía
+          para DJs</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-8 pb-24">
+    <!-- Encabezado DJ -->
+    <section class="mb-8">
+      <div class="grid md:grid-cols-[140px_1fr] gap-5 items-center">
+        <div class="w-[120px] h-[120px] rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-900">
+          <img id="djAvatar" src="" alt="Avatar DJ" class="w-full h-full object-cover" />
+        </div>
+        <div>
+          <h1 id="djName" class="text-3xl md:text-4xl font-extrabold mb-1">DJ</h1>
+          <div class="flex flex-wrap items-center gap-2 text-sm text-neutral-300 mb-3">
+            <span id="djGenre" class="badge"></span>
+            <span id="djCity" class="badge"></span>
+            <span id="djStats" class="text-neutral-400"></span>
+          </div>
+          <div id="djSocials" class="flex gap-3 mb-3"></div>
+          <p id="djBio" class="text-neutral-300"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabs -->
+    <div class="inline-flex bg-neutral-900 rounded-xl p-1 mb-6">
+      <button id="tabBtnMixes" class="btn-primary" data-tab="mixes">Mixes</button>
+      <button id="tabBtnVideos" class="btn" data-tab="videos">Videos</button>
+    </div>
+
+    <!-- MIXES del DJ -->
+    <section id="section-mixes" class="space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-3">
+        <div>
+          <h2 class="text-xl font-semibold" id="mixesTitle">Mixes de este DJ</h2>
+          <p class="text-sm text-neutral-400" id="mixesCount">Cargando...</p>
+        </div>
+        <div class="flex items-center gap-2 bg-neutral-900 rounded-xl p-1">
+          <button id="viewGrid" class="p-2 rounded-lg bg-[var(--primary-color)] view-toggle" data-view="grid"
+            aria-label="Ver en cuadrícula">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+          </button>
+          <button id="viewList" class="p-2 rounded-lg view-toggle" data-view="list" aria-label="Ver en lista">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="mixesGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 hidden"></div>
+      <div id="mixesList" class="hidden"></div>
+
+      <div id="emptyMixes" class="hidden text-center py-12">
+        <div class="text-4xl mb-4">🎧</div>
+        <h3 class="text-xl font-semibold mb-2">Este DJ aún no tiene mixes</h3>
+        <p class="text-neutral-400 mt-2">Visita el dashboard para subir contenido</p>
+      </div>
+    </section>
+
+    <!-- VIDEOS del DJ -->
+    <section id="section-videos" class="space-y-6 hidden">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-3">
+        <div>
+          <h2 class="text-xl font-semibold" id="videosTitle">Videos de este DJ</h2>
+          <p class="text-sm text-neutral-400" id="videosCount">Cargando...</p>
+        </div>
+      </div>
+
+      <div id="videosGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+      <div id="emptyVideos" class="hidden text-center py-12">
+        <div class="text-4xl mb-4">📺</div>
+        <h3 class="text-xl font-semibold mb-2">Este DJ aún no tiene videos</h3>
+        <p class="text-neutral-400 mt-2">Visita el dashboard para subir contenido</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Mini reproductor de audio global -->
+  <div class="player" id="miniPlayer" role="region" aria-label="Reproductor">
+    <button id="prevBtn" title="Anterior">⏮︎</button>
+    <button id="playPauseBtn" title="Reproducir/Pausar">▶️</button>
+    <button id="nextBtn" title="Siguiente">⏭︎</button>
+    <div class="now">
+      <div class="t" id="nowTitle">Nada reproduciéndose</div>
+      <div class="s" id="nowSub">—</div>
+    </div>
+    <div class="badge" id="nowDur">00:00</div>
+    <audio id="audio" preload="none"></audio>
+  </div>
+
+  <div id="notification" class="notification">Operación completada</div>
+
+  <script>
+    // ===== CONSTANTES Y CONFIGURACIÓN =====
+    const STORAGE_KEYS = {
+      INDEX_DATA: 'pandaIndexData',
+      COUNTS: 'pandaCounts:v2'
+    };
+
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    // ===== ESTADO GLOBAL =====
+    let currentDJ = null;
+    let djMixes = [];
+    let djVideos = [];
+    let counts = {};
+    let currentView = 'grid';
+    let audioQueue = [];
+    let currentAudioIndex = -1;
+
+    // ===== FUNCIONES PRINCIPALES =====
+    function loadDJData() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const djNameParam = urlParams.get('dj');
+      const djIdParam = urlParams.get('id');
+
+      if (!djNameParam && !djIdParam) {
+        showError('No se especificó un DJ');
+        return false;
+      }
+
+      try {
+        // Cargar datos desde el almacenamiento sincronizado
+        const indexData = JSON.parse(localStorage.getItem(STORAGE_KEYS.INDEX_DATA) || '{}');
+        counts = JSON.parse(localStorage.getItem(STORAGE_KEYS.COUNTS) || '{}');
+
+        const allDJs = indexData.djs || [];
+        const allMixes = indexData.mixes || [];
+        const allVideos = indexData.videos || [];
+
+        // Buscar el DJ por ID o nombre
+        let dj = null;
+
+        if (djIdParam) {
+          dj = allDJs.find(d => d.id == djIdParam);
+        }
+
+        if (!dj && djNameParam) {
+          // Buscar por nombre (case insensitive)
+          const searchName = djNameParam.toLowerCase();
+          dj = allDJs.find(d => d.name.toLowerCase().includes(searchName));
+        }
+
+        if (!dj) {
+          // Si no se encuentra en los DJs registrados, crear uno básico
+          dj = {
+            id: djIdParam || Date.now(),
+            name: djNameParam,
+            genre: 'No especificado',
+            city: '',
+            bio: 'DJ en Panda Truck Reloaded',
+            avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(djNameParam)}`,
+            socials: '',
+            mixes: 0,
+            videos: 0
+          };
+        }
+
+        // Filtrar mixes y videos del DJ
+        const mixes = allMixes.filter(m => m.dj === dj.name);
+        const videos = allVideos.filter(v => v.dj === dj.name);
+
+        // Actualizar estadísticas del DJ
+        dj.mixes = mixes.length;
+        dj.videos = videos.length;
+
+        return {
+          dj: dj,
+          mixes: mixes,
+          videos: videos
+        };
+
+      } catch (error) {
+        console.error('Error loading DJ data:', error);
+        showError('Error al cargar los datos del DJ');
+        return null;
+      }
+    }
+
+    function renderDJProfile(djData) {
+      if (!djData) return;
+
+      const { dj, mixes, videos } = djData;
+      currentDJ = dj;
+      djMixes = mixes;
+      djVideos = videos;
+
+      // Actualizar metadatos de la página
+      document.title = `${dj.name} - Panda Truck Reloaded`;
+
+      // Información básica del DJ
+      $("#djName").textContent = dj.name;
+      $("#djAvatar").src = dj.avatar || 'https://api.dicebear.com/7.x/identicon/svg?seed=' + dj.name;
+      $("#djGenre").textContent = dj.genre || 'No especificado';
+
+      if (dj.city) {
+        $("#djCity").textContent = dj.city;
+      } else {
+        $("#djCity").style.display = 'none';
+      }
+
+      // Estadísticas
+      $("#djStats").textContent = `${dj.mixes} mixes • ${dj.videos} videos`;
+
+      // Biografía
+      $("#djBio").textContent = dj.bio || 'Este DJ aún no tiene una biografía.';
+
+      // Redes sociales
+      renderSocialLinks(dj.socials);
+
+      // Renderizar contenido
+      renderMixesSection();
+      renderVideosSection();
+
+      // Mostrar sección de mixes por defecto
+      switchTab('mixes');
+    }
+
+    function renderSocialLinks(socialsString) {
+      const container = $("#djSocials");
+      container.innerHTML = '';
+
+      if (!socialsString) {
+        container.innerHTML = '<span class="text-neutral-400 text-sm">No hay redes sociales</span>';
+        return;
+      }
+
+      try {
+        const socials = socialsString.split(',').map(s => s.trim()).filter(s => s);
+
+        socials.forEach(social => {
+          try {
+            const url = new URL(social);
+            const domain = url.hostname.replace('www.', '');
+            const icon = getSocialIcon(domain);
+
+            const link = document.createElement('a');
+            link.href = social;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.className = 'flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors';
+            link.innerHTML = `${icon} <span class="text-sm">${domain}</span>`;
+
+            container.appendChild(link);
+          } catch (e) {
+            console.warn('URL inválida:', social);
+          }
+        });
+
+        if (container.children.length === 0) {
+          container.innerHTML = '<span class="text-neutral-400 text-sm">No hay redes sociales válidas</span>';
+        }
+      } catch (error) {
+        container.innerHTML = '<span class="text-neutral-400 text-sm">Error al cargar redes sociales</span>';
+      }
+    }
+
+    function getSocialIcon(domain) {
+      const icons = {
+        'instagram.com': '📷',
+        'facebook.com': '📘',
+        'twitter.com': '🐦',
+        'youtube.com': '📺',
+        'tiktok.com': '🎵',
+        'soundcloud.com': '🎧',
+        'spotify.com': '🎵'
+      };
+
+      return icons[domain] || '🔗';
+    }
+
+    function renderMixesSection() {
+      const mixesGrid = $("#mixesGrid");
+      const mixesList = $("#mixesList");
+      const emptyMixes = $("#emptyMixes");
+
+      mixesGrid.innerHTML = '';
+      mixesList.innerHTML = '';
+
+      $("#mixesCount").textContent = `${djMixes.length} mix${djMixes.length !== 1 ? 'es' : ''}`;
+
+      if (djMixes.length === 0) {
+        mixesGrid.classList.add('hidden');
+        mixesList.classList.add('hidden');
+        emptyMixes.classList.remove('hidden');
+        return;
+      }
+
+      emptyMixes.classList.add('hidden');
+
+      // Preparar queue de reproducción
+      audioQueue = djMixes.filter(m => m.url).map(mix => ({
+        id: mix.id,
+        title: mix.title,
+        dj: mix.dj,
+        url: mix.url
+      }));
+
+      // Renderizar en vista actual
+      if (currentView === 'grid') {
+        renderMixesGrid();
+      } else {
+        renderMixesList();
+      }
+    }
+
+    function renderMixesGrid() {
+      const grid = $("#mixesGrid");
+      grid.innerHTML = '';
+
+      djMixes.forEach(mix => {
+        const card = document.createElement('div');
+        card.className = 'mix-card rounded-2xl border border-neutral-800 overflow-hidden bg-neutral-900 hover:bg-neutral-800 transition-colors fade-in';
+        card.innerHTML = `
+          <div class="aspect-square relative overflow-hidden">
+            <img src="${mix.cover}" alt="${mix.title}" class="cover-image w-full h-full object-cover" onerror="this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 400%22><rect fill=%22%23333%22 width=%22400%22 height=%22400%22/><text fill=%22%23fff%22 font-family=%22Arial%22 font-size=%2230%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22>${mix.dj}</text></svg>'" />
+            <div class="absolute top-2 right-2 px-2 py-1 rounded-full bg-black/70 text-xs">${mix.duration}</div>
+          </div>
+          <div class="p-4">
+            <h4 class="font-semibold line-clamp-1">${mix.title}</h4>
+            <p class="text-sm text-neutral-400 mt-1">${mix.genre}</p>
+            <div class="mt-3 flex justify-between items-center text-xs text-neutral-400">
+              <span id="play-${mix.id}">▶️ ${getPlayCount(mix.id)}</span>
+              <span id="dl-${mix.id}">⬇️ ${getDownloadCount(mix.id)}</span>
+              <span>${mix.sizeMB} MB</span>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+              <button class="play-button py-2 rounded-xl bg-[var(--primary-color)] font-medium hover:bg-[var(--primary-hover)] mix-play" data-id="${mix.id}" data-url="${mix.url}">Reproducir</button>
+              <a href="${mix.url}" download="${mix.title} - ${mix.dj}.mp3" class="py-2 rounded-xl bg-neutral-800 font-medium hover:bg-neutral-700 text-center mix-download" data-id="${mix.id}">Descargar</a>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      mixesGrid.classList.remove('hidden');
+      mixesList.classList.add('hidden');
+    }
+
+    function renderMixesList() {
+      const list = $("#mixesList");
+      list.innerHTML = '';
+
+      djMixes.forEach(mix => {
+        const item = document.createElement('div');
+        item.className = 'border border-neutral-800 rounded-2xl bg-neutral-900 hover:bg-neutral-800 transition-colors p-4 mb-4 fade-in';
+        item.innerHTML = `
+          <div class="flex flex-col md:flex-row gap-4">
+            <div class="w-full md:w-24 h-24 rounded-xl overflow-hidden flex-shrink-0">
+              <img src="${mix.cover}" alt="${mix.title}" class="w-full h-full object-cover" onerror="this.style.display='none'" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-lg">${mix.title}</div>
+              <div class="text-neutral-400 text-sm">${mix.genre} · ${mix.duration}</div>
+              <div class="mt-2 flex gap-4 text-sm text-neutral-400">
+                <span id="play-${mix.id}">▶️ ${getPlayCount(mix.id)}</span>
+                <span id="dl-${mix.id}">⬇️ ${getDownloadCount(mix.id)}</span>
+                <span>${mix.sizeMB} MB</span>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button class="btn-primary mix-play" data-id="${mix.id}" data-url="${mix.url}">Reproducir</button>
+              <a href="${mix.url}" download="${mix.title} - ${mix.dj}.mp3" class="btn mix-download" data-id="${mix.id}">Descargar</a>
+            </div>
+          </div>
+        `;
+        list.appendChild(item);
+      });
+
+      mixesList.classList.remove('hidden');
+      mixesGrid.classList.add('hidden');
+    }
+
+    function renderVideosSection() {
+      const videosGrid = $("#videosGrid");
+      const emptyVideos = $("#emptyVideos");
+
+      videosGrid.innerHTML = '';
+      $("#videosCount").textContent = `${djVideos.length} video${djVideos.length !== 1 ? 's' : ''}`;
+
+      if (djVideos.length === 0) {
+        emptyVideos.classList.remove('hidden');
+        return;
+      }
+
+      emptyVideos.classList.add('hidden');
+
+      djVideos.forEach(video => {
+        const isYouTube = video.type === 'youtube' || video.url.includes('youtube') || video.url.includes('youtu.be');
+        const youTubeId = isYouTube ? extractYouTubeId(video.url) : null;
+        const thumbnail = video.cover || (isYouTube ? `https://img.youtube.com/vi/${youTubeId}/hqdefault.jpg` : '');
+
+        const card = document.createElement('div');
+        card.className = 'rounded-2xl border border-neutral-800 overflow-hidden bg-neutral-900 hover:bg-neutral-800 transition-colors fade-in';
+        card.innerHTML = `
+          <div class="aspect-video relative overflow-hidden">
+            <img src="${thumbnail}" alt="${video.title}" class="w-full h-full object-cover" onerror="this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 225%22><rect fill=%22%23333%22 width=%22400%22 height=%22225%22/><text fill=%22%23fff%22 font-family=%22Arial%22 font-size=%2230%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22>${video.dj}</text></svg>'" />
+            <div class="absolute inset-0 flex items-center justify-center">
+              <button class="video-play p-3 rounded-full bg-black/50 hover:bg-black/70 transition-colors" data-id="${video.id}" data-url="${video.url}" data-type="${isYouTube ? 'youtube' : 'direct'}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-8 h-8">
+                  <path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            <div class="absolute top-2 right-2 px-2 py-1 rounded-full bg-black/70 text-xs">${video.duration}</div>
+          </div>
+          <div class="p-4">
+            <h4 class="font-semibold line-clamp-2">${video.title}</h4>
+            <div class="mt-3 flex justify-between items-center text-xs text-neutral-400">
+              <span id="vplay-${video.id}">▶️ ${getPlayCount(video.id, true)}</span>
+              <span id="vdl-${video.id}">⬇️ ${getDownloadCount(video.id, true)}</span>
+              <span>${isYouTube ? 'YouTube' : (video.sizeMB ? video.sizeMB + ' MB' : 'Video')}</span>
+            </div>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+              <button class="py-2 rounded-xl bg-[var(--primary-color)] font-medium hover:bg-[var(--primary-hover)] video-play" data-id="${video.id}" data-url="${video.url}" data-type="${isYouTube ? 'youtube' : 'direct'}">Ver</button>
+              <a href="${video.url}" ${isYouTube ? 'target="_blank"' : 'download="' + video.title + ' - ' + video.dj + '.mp4"'} class="py-2 rounded-xl bg-neutral-800 font-medium hover:bg-neutral-700 text-center">${isYouTube ? 'Abrir' : 'Descargar'}</a>
+            </div>
+          </div>
+        `;
+        videosGrid.appendChild(card);
+      });
+    }
+
+    function extractYouTubeId(url) {
+      const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+      const match = url.match(regex);
+      return match ? match[1] : null;
+    }
+
+    function getPlayCount(id, isVideo = false) {
+      const key = (isVideo ? 'v:' : 'm:') + id;
+      return counts[key]?.plays || 0;
+    }
+
+    function getDownloadCount(id, isVideo = false) {
+      const key = (isVideo ? 'v:' : 'm:') + id;
+      return counts[key]?.downloads || 0;
+    }
+
+    function updatePlayCount(id, isVideo = false) {
+      const key = (isVideo ? 'v:' : 'm:') + id;
+      const currentPlays = getPlayCount(id, isVideo);
+      counts[key] = { plays: currentPlays + 1, downloads: getDownloadCount(id, isVideo) };
+      localStorage.setItem(STORAGE_KEYS.COUNTS, JSON.stringify(counts));
+
+      // Actualizar UI
+      const el = document.getElementById((isVideo ? 'vplay-' : 'play-') + id);
+      if (el) el.textContent = `▶️ ${currentPlays + 1}`;
+    }
+
+    function updateDownloadCount(id, isVideo = false) {
+      const key = (isVideo ? 'v:' : 'm:') + id;
+      const currentDownloads = getDownloadCount(id, isVideo);
+      counts[key] = { plays: getPlayCount(id, isVideo), downloads: currentDownloads + 1 };
+      localStorage.setItem(STORAGE_KEYS.COUNTS, JSON.stringify(counts));
+
+      // Actualizar UI
+      const el = document.getElementById((isVideo ? 'vdl-' : 'dl-') + id);
+      if (el) el.textContent = `⬇️ ${currentDownloads + 1}`;
+    }
+
+    // ===== SISTEMA DE PESTAÑAS =====
+    function switchTab(tabName) {
+      // Ocultar todas las secciones
+      $("#section-mixes").classList.add('hidden');
+      $("#section-videos").classList.add('hidden');
+
+      // Remover clase activa de todos los botones
+      $("#tabBtnMixes").classList.remove('btn-primary');
+      $("#tabBtnMixes").classList.add('btn');
+      $("#tabBtnVideos").classList.remove('btn-primary');
+      $("#tabBtnVideos").classList.add('btn');
+
+      // Mostrar sección seleccionada y activar botón
+      if (tabName === 'mixes') {
+        $("#section-mixes").classList.remove('hidden');
+        $("#tabBtnMixes").classList.remove('btn');
+        $("#tabBtnMixes").classList.add('btn-primary');
+      } else if (tabName === 'videos') {
+        $("#section-videos").classList.remove('hidden');
+        $("#tabBtnVideos").classList.remove('btn');
+        $("#tabBtnVideos").classList.add('btn-primary');
+      }
+    }
+
+    // ===== REPRODUCTOR DE AUDIO - CORREGIDO =====
+    function setupAudioPlayer() {
+      const audio = $("#audio");
+      const playPauseBtn = $("#playPauseBtn");
+      const prevBtn = $("#prevBtn");
+      const nextBtn = $("#nextBtn");
+      const nowTitle = $("#nowTitle");
+      const nowSub = $("#nowSub");
+      const nowDur = $("#nowDur");
+
+      function formatTime(seconds) {
+        if (!isFinite(seconds)) return '00:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      }
+
+      function updatePlayerUI() {
+        if (currentAudioIndex >= 0 && currentAudioIndex < audioQueue.length) {
+          const current = audioQueue[currentAudioIndex];
+          nowTitle.textContent = current.title;
+          nowSub.textContent = `Por ${current.dj}`;
+          document.title = `${current.title} - ${currentDJ.name}`;
+        } else {
+          nowTitle.textContent = 'Nada reproduciéndose';
+          nowSub.textContent = '—';
+          document.title = `${currentDJ.name} - Panda Truck Reloaded`;
+        }
+      }
+
+      // FUNCIÓN playCurrent CORREGIDA - ahora está definida correctamente
+      window.playCurrent = function () {
+        if (currentAudioIndex < 0 || currentAudioIndex >= audioQueue.length) {
+          playPauseBtn.textContent = '▶️';
+          return;
+        }
+
+        const current = audioQueue[currentAudioIndex];
+        audio.src = current.url;
+
+        audio.play().then(() => {
+          playPauseBtn.textContent = '⏸️';
+          updatePlayCount(current.id, false);
+          updatePlayerUI();
+        }).catch(error => {
+          console.error('Error playing audio:', error);
+          showNotification('Error al reproducir el audio. Asegúrate de que la URL sea válida.');
+          playPauseBtn.textContent = '▶️';
+        });
+      };
+
+      playPauseBtn.addEventListener('click', () => {
+        if (audio.paused) {
+          if (audio.src) {
+            audio.play();
+          } else if (audioQueue.length > 0) {
+            currentAudioIndex = 0;
+            playCurrent();
+          } else {
+            showNotification('No hay mixes para reproducir');
+          }
+        } else {
+          audio.pause();
+        }
+      });
+
+      prevBtn.addEventListener('click', () => {
+        if (audioQueue.length === 0) return;
+        currentAudioIndex = (currentAudioIndex - 1 + audioQueue.length) % audioQueue.length;
+        playCurrent();
+      });
+
+      nextBtn.addEventListener('click', () => {
+        if (audioQueue.length === 0) return;
+        currentAudioIndex = (currentAudioIndex + 1) % audioQueue.length;
+        playCurrent();
+      });
+
+      audio.addEventListener('play', () => {
+        playPauseBtn.textContent = '⏸️';
+      });
+
+      audio.addEventListener('pause', () => {
+        playPauseBtn.textContent = '▶️';
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        nowDur.textContent = formatTime(audio.currentTime);
+      });
+
+      audio.addEventListener('ended', () => {
+        if (audioQueue.length > 0) {
+          currentAudioIndex = (currentAudioIndex + 1) % audioQueue.length;
+          playCurrent();
+        }
+      });
+
+      audio.addEventListener('error', () => {
+        showNotification('Error al cargar el audio. Verifica la URL.');
+        playPauseBtn.textContent = '▶️';
+      });
+    }
+
+    // ===== MANEJO DE EVENTOS - CORREGIDO =====
+    function setupEventListeners() {
+      // Tabs
+      $("#tabBtnMixes").addEventListener('click', () => switchTab('mixes'));
+      $("#tabBtnVideos").addEventListener('click', () => switchTab('videos'));
+
+      // Vista (grid/list)
+      $$('.view-toggle').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const view = e.currentTarget.dataset.view;
+          currentView = view;
+
+          $$('.view-toggle').forEach(b => {
+            if (b.dataset.view === view) {
+              b.classList.add('bg-[var(--primary-color)]');
+            } else {
+              b.classList.remove('bg-[var(--primary-color)]');
+            }
+          });
+
+          renderMixesSection();
+        });
+      });
+
+      // Delegación de eventos para mixes y videos - CORREGIDO
+      document.addEventListener('click', (e) => {
+        // Reproducir mix - CORREGIDO
+        if (e.target.classList.contains('mix-play')) {
+          const mixId = parseInt(e.target.dataset.id);
+          const mixUrl = e.target.dataset.url;
+
+          // Encontrar el mix en la queue
+          const mixIndex = audioQueue.findIndex(item => item.id === mixId);
+
+          if (mixIndex !== -1) {
+            currentAudioIndex = mixIndex;
+            playCurrent(); // Ahora esta función está definida correctamente
+          } else if (mixUrl) {
+            // Si no está en la queue pero tiene URL, agregarlo y reproducir
+            const mix = djMixes.find(m => m.id === mixId);
+            if (mix) {
+              audioQueue.unshift({
+                id: mix.id,
+                title: mix.title,
+                dj: mix.dj,
+                url: mix.url
+              });
+              currentAudioIndex = 0;
+              playCurrent();
+            }
+          }
+        }
+
+        // Descargar mix - CORREGIDO
+        if (e.target.classList.contains('mix-download')) {
+          const mixId = parseInt(e.target.dataset.id);
+          updateDownloadCount(mixId, false);
+          showNotification('Descarga iniciada');
+          // La descarga real la maneja el atributo 'download' del enlace <a>
+        }
+
+        // Reproducir/ver video - CORREGIDO
+        if (e.target.classList.contains('video-play')) {
+          const videoId = parseInt(e.target.dataset.id);
+          const videoUrl = e.target.dataset.url;
+          const videoType = e.target.dataset.type;
+
+          updatePlayCount(videoId, true);
+
+          if (videoType === 'youtube') {
+            window.open(videoUrl, '_blank');
+            showNotification('Abriendo video de YouTube');
+          } else {
+            // Para videos directos, abrir en nueva pestaña o descargar
+            window.open(videoUrl, '_blank');
+            showNotification('Reproduciendo video');
+          }
+        }
+      });
+
+      // Sincronización con cambios en tiempo real
+      window.addEventListener('storage', (e) => {
+        if (e.key === STORAGE_KEYS.INDEX_DATA || e.key === STORAGE_KEYS.COUNTS) {
+          showNotification('Actualizando contenido...', 2000);
+          setTimeout(() => {
+            const djData = loadDJData();
+            if (djData) {
+              renderDJProfile(djData);
+            }
+          }, 1000);
+        }
+      });
+    }
+
+    function showError(message) {
+      $("#djName").textContent = 'DJ No Encontrado';
+      $("#djBio").textContent = message;
+      $("#emptyMixes").classList.remove('hidden');
+      $("#emptyVideos").classList.remove('hidden');
+    }
+
+    function showNotification(message, duration = 3000) {
+      const notification = $("#notification");
+      notification.textContent = message;
+      notification.classList.add("show");
+
+      setTimeout(() => {
+        notification.classList.remove("show");
+      }, duration);
+    }
+
+    // ===== INICIALIZACIÓN =====
+    function init() {
+      const djData = loadDJData();
+      if (djData) {
+        renderDJProfile(djData);
+        setupAudioPlayer(); // Configurar el reproductor primero
+        setupEventListeners();
+      }
+    }
+
+    // Iniciar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+
+</html>

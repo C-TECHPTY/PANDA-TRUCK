@@ -1,0 +1,1230 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Todos los Mixes - Panda Truck Reloaded</title>
+
+  <!-- Favicon -->
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎧</text></svg>"
+    type="image/svg+xml">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --primary-color: #e1261d;
+      --primary-hover: #c81e16;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, .06);
+      backdrop-filter: saturate(120%) blur(8px)
+    }
+
+    .cover-image {
+      transition: transform 0.3s ease;
+    }
+
+    .mix-card:hover .cover-image {
+      transform: scale(1.05);
+    }
+
+    .play-button {
+      transition: all 0.2s ease;
+    }
+
+    .play-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px var(--primary-color);
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, .3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: var(--primary-color);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .notification.show {
+      opacity: 1;
+    }
+
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .filter-active {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    .sidebar-sticky {
+      position: sticky;
+      top: 120px;
+      height: calc(100vh - 140px);
+      overflow-y: auto;
+    }
+
+    /* Custom scrollbar for sidebar */
+    .sidebar-sticky::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .sidebar-sticky::-webkit-scrollbar-track {
+      background: #1a1a1a;
+    }
+
+    .sidebar-sticky::-webkit-scrollbar-thumb {
+      background: #404040;
+      border-radius: 4px;
+    }
+
+    .sidebar-sticky::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    .logo-custom {
+      text-align: center;
+      padding: 12px 0;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      border-bottom: 1px solid var(--primary-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .logo-custom img {
+      max-height: 60px;
+      width: auto;
+    }
+
+    .tab-active {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    .content-tab {
+      display: none;
+    }
+
+    .content-tab.active {
+      display: block;
+    }
+  </style>
+</head>
+
+<body class="bg-neutral-950 text-neutral-100">
+  <!-- LOGO PERSONALIZADO CENTRADO (sticky) -->
+  <div class="logo-custom sticky top-0 z-40">
+    <a href="index.html">
+      <img src="img/logo.png" alt="Panda Truck Reloaded" class="max-h-12" />
+    </a>
+  </div>
+
+  <!-- NAV -->
+  <header class="sticky top-[60px] z-50 border-b border-neutral-800 glass">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <!-- Menú móvil a la izquierda -->
+      <button id="mobileBtn" class="md:hidden p-2 rounded-xl border border-neutral-800" aria-controls="mobileMenu"
+        aria-expanded="false">☰</button>
+
+      <!-- Navegación desktop centrada -->
+      <nav class="hidden md:flex items-center gap-6 text-sm text-neutral-300">
+        <a href="index.html" class="hover:text-white transition-colors">Inicio</a>
+        <a href="mixes.html" class="hover:text-white transition-colors text-white font-semibold">Todos los Mixes</a>
+        <a href="index.html#videos" class="hover:text-white transition-colors">Videos</a>
+        <a href="index.html#djs" class="hover:text-white transition-colors">DJs</a>
+        <a href="index.html#eventos" class="hover:text-white transition-colors">Eventos</a>
+      </nav>
+
+      <!-- Botones a la derecha -->
+      <div class="flex items-center gap-3">
+        <a href="GuíaDJs.html"
+          class="px-3 py-1.5 rounded-xl bg-primary text-white font-medium hover:bg-primary-hover transition-colors hidden md:block">Guía
+          Para DJs
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile menu panel -->
+    <div id="mobileMenu" class="md:hidden hidden border-t border-neutral-800">
+      <div class="max-w-7xl mx-auto px-4 py-3 space-y-2 text-sm">
+        <a href="index.html" class="block px-3 py-2 rounded-lg hover:bg-neutral-900 transition-colors">Inicio</a>
+        <a href="mixes.html" class="block px-3 py-2 rounded-lg bg-neutral-800 transition-colors">Todos los Mixes</a>
+        <a href="index.html#videos" class="block px-3 py-2 rounded-lg hover:bg-neutral-900 transition-colors">Videos</a>
+        <a href="index.html#djs" class="block px-3 py-2 rounded-lg hover:bg-neutral-900 transition-colors">DJs</a>
+        <a href="index.html#eventos"
+          class="block px-3 py-2 rounded-lg hover:bg-neutral-900 transition-colors">Eventos</a>
+        <a href="dashboard.html"
+          class="block px-3 py-2 rounded-lg bg-primary text-white text-center transition-colors"></a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <!-- HEADER SECTION -->
+    <div class="mb-8">
+      <h1 class="text-3xl md:text-4xl font-extrabold mb-2">Todos los Mixes y Videos</h1>
+      <p class="text-neutral-400">Catálogo completo de contenido musical de Panda Truck Reloaded</p>
+    </div>
+
+    <!-- TABS PRINCIPALES -->
+    <div class="inline-flex bg-neutral-900 rounded-xl p-1 mb-6">
+      <button id="tabAll" class="tab-btn px-4 py-2 rounded-lg tab-active" data-tab="all">Todo el Contenido</button>
+      <button id="tabMixes" class="tab-btn px-4 py-2 rounded-lg" data-tab="mixes">Solo Mixes</button>
+      <button id="tabVideos" class="tab-btn px-4 py-2 rounded-lg" data-tab="videos">Solo Videos</button>
+    </div>
+
+    <div class="flex flex-col md:flex-row gap-8">
+      <!-- SIDEBAR WITH FILTERS -->
+      <aside class="w-full md:w-1/4 lg:w-1/5">
+        <div class="sidebar-sticky">
+          <!-- Search Box -->
+          <div class="mb-6">
+            <label for="searchContent" class="block text-sm font-medium mb-2">Buscar</label>
+            <input type="text" id="searchContent" placeholder="Buscar por título, DJ o género..."
+              class="w-full px-4 py-2 rounded-xl bg-neutral-900 border border-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary">
+          </div>
+
+          <!-- Sort Options -->
+          <div class="mb-6">
+            <h3 class="font-semibold mb-3">Ordenar por</h3>
+            <div class="space-y-2">
+              <button
+                class="w-full text-left px-3 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors sort-option filter-active"
+                data-sort="recent">
+                Más recientes
+              </button>
+              <button
+                class="w-full text-left px-3 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors sort-option"
+                data-sort="popular">
+                Más populares
+              </button>
+              <button
+                class="w-full text-left px-3 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors sort-option"
+                data-sort="downloads">
+                Más descargados
+              </button>
+              <button
+                class="w-full text-left px-3 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors sort-option"
+                data-sort="title">
+                Orden alfabético
+              </button>
+            </div>
+          </div>
+
+          <!-- Genre Filters -->
+          <div class="mb-6">
+            <h3 class="font-semibold mb-3">Géneros</h3>
+            <div class="space-y-2" id="genreFilters">
+              <!-- Generated dynamically -->
+            </div>
+          </div>
+
+          <!-- DJ Filters -->
+          <div class="mb-6">
+            <h3 class="font-semibold mb-3">DJs</h3>
+            <div class="space-y-2" id="djFilters">
+              <!-- Generated dynamically -->
+            </div>
+          </div>
+
+          <!-- Type Filters (for all content) -->
+          <div class="mb-6" id="typeFiltersSection">
+            <h3 class="font-semibold mb-3">Tipo de Contenido</h3>
+            <div class="space-y-2">
+              <button
+                class="w-full text-left px-3 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors type-filter"
+                data-type="all">
+                Todos los tipos
+              </button>
+              <button
+                class="w-full text-left px-3 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors type-filter"
+                data-type="mix">
+                Mixes (Audio)
+              </button>
+              <button
+                class="w-full text-left px-3 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors type-filter"
+                data-type="video">
+                Videos
+              </button>
+            </div>
+          </div>
+
+          <!-- Clear Filters Button -->
+          <button id="clearFilters"
+            class="w-full px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 transition-colors text-sm">
+            Limpiar filtros
+          </button>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT AREA -->
+      <div class="w-full md:w-3/4 lg:w-4/5">
+        <!-- Results Header -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
+          <div>
+            <h2 class="text-xl font-semibold" id="resultsTitle">Todo el contenido</h2>
+            <p class="text-sm text-neutral-400" id="resultsCount">Cargando...</p>
+          </div>
+
+          <!-- View and Display Toggles -->
+          <div class="flex items-center gap-3">
+            <!-- Items per page -->
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-neutral-400">Mostrar:</span>
+              <select id="itemsPerPage" class="px-2 py-1 rounded bg-neutral-800 text-sm">
+                <option value="12">12</option>
+                <option value="24">24</option>
+                <option value="48">48</option>
+                <option value="96">96</option>
+              </select>
+            </div>
+
+            <!-- View Toggle -->
+            <div class="flex items-center gap-2 bg-neutral-900 rounded-xl p-1">
+              <button id="viewGrid" class="p-2 rounded-lg bg-primary view-toggle" data-view="grid"
+                title="Vista de cuadrícula">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+              </button>
+              <button id="viewList" class="p-2 rounded-lg view-toggle" data-view="list" title="Vista de lista">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="flex justify-center items-center py-12">
+          <div class="loading-spinner"></div>
+          <span class="ml-2">Cargando contenido...</span>
+        </div>
+
+        <!-- Content Grid -->
+        <div id="contentGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 hidden">
+          <!-- Content will be loaded here -->
+        </div>
+
+        <!-- Content List -->
+        <div id="contentList" class="hidden">
+          <!-- List view will be loaded here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-12">
+          <div class="text-4xl mb-4">🎧</div>
+          <h3 class="text-xl font-semibold mb-2">No se encontró contenido</h3>
+          <p class="text-neutral-400 mt-2">Intenta ajustar los filtros o términos de búsqueda</p>
+        </div>
+
+        <!-- Pagination -->
+        <div id="pagination" class="mt-8 flex justify-center items-center gap-4 hidden">
+          <!-- Pagination will be generated here -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-neutral-800 mt-12">
+    <div class="max-w-7xl mx-auto px-4 py-8 grid md:grid-cols-3 gap-6 text-sm">
+      <div>
+        <h4 class="font-semibold mb-2">Panda Truck Reloaded</h4>
+        <p class="text-neutral-400">Catálogo completo de mixes y videos. Actualizado regularmente con nuevo contenido.
+        </p>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-2">Enlaces Rápidos</h4>
+        <ul class="space-y-1 text-neutral-300">
+          <li><a href="index.html" class="hover:text-white transition-colors">Inicio</a></li>
+          <li><a href="mixes.html" class="hover:text-white transition-colors">Todos los Mixes</a></li>
+          <li><a href="index.html#videos" class="hover:text-white transition-colors">Videos Destacados</a></li>
+          <li><a href="index.html#djs" class="hover:text-white transition-colors">Directorio de DJs</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-2">Estadísticas</h4>
+        <ul class="space-y-1 text-neutral-300">
+          <li><span id="totalMixesCount">0</span> mixes disponibles</li>
+          <li><span id="totalVideosCount">0</span> videos disponibles</li>
+          <li><span id="totalDJsCount">0</span> DJs activos</li>
+          <li>Contenido actualizado diariamente</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 pb-6">
+      <div class="logo-custom border-t border-neutral-800 pt-6">
+        <img src="img/logo.png" alt="Panda Truck Reloaded" class="max-h-10" />
+      </div>
+    </div>
+  </footer>
+
+  <!-- NOTIFICACIÓN -->
+  <div id="notification" class="notification">Operación completada</div>
+
+  <!-- MODAL DE REPRODUCCIÓN -->
+  <div id="playModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-4">
+    <div class="bg-neutral-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+      <div class="flex justify-between items-center p-6 border-b border-neutral-800">
+        <h3 class="text-xl font-semibold" id="modalTitle">Reproducir Contenido</h3>
+        <button id="closeModal" class="text-2xl hover:text-white transition-colors">×</button>
+      </div>
+
+      <div class="p-6">
+        <div id="modalContent">
+          <!-- Contenido del modal se carga aquí -->
+        </div>
+
+        <div class="mt-6 flex gap-3 justify-end">
+          <button id="modalDownload"
+            class="px-4 py-2 bg-primary rounded-lg hover:bg-primary-hover transition-colors">Descargar</button>
+          <button id="modalClose"
+            class="px-4 py-2 bg-neutral-800 rounded-lg hover:bg-neutral-700 transition-colors">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== SISTEMA DE DATOS =====
+    const STORAGE_KEYS = {
+      INDEX_DATA: 'pandaIndexData',
+      COUNTS: 'pandaCounts:v2'
+    };
+
+    // ===== ESTADO GLOBAL =====
+    let ALL_MIXES = [];
+    let ALL_VIDEOS = [];
+    let ALL_DJS = [];
+    let counts = {};
+
+    let filteredContent = [];
+    let currentPage = 1;
+    let itemsPerPage = 12;
+    let currentView = 'grid';
+    let currentTab = 'all';
+    let currentSort = 'recent';
+    let currentFilters = {
+      search: '',
+      genres: [],
+      djs: [],
+      types: ['mix', 'video']
+    };
+
+    // ===== HELPERS =====
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    function showNotification(message, duration = 3000) {
+      const notification = $("#notification");
+      notification.textContent = message;
+      notification.classList.add("show");
+
+      setTimeout(() => {
+        notification.classList.remove("show");
+      }, duration);
+    }
+
+    // ===== CARGAR DATOS =====
+    function loadData() {
+      try {
+        const indexData = JSON.parse(localStorage.getItem(STORAGE_KEYS.INDEX_DATA) || '{}');
+        counts = JSON.parse(localStorage.getItem(STORAGE_KEYS.COUNTS) || '{}');
+
+        ALL_MIXES = indexData.mixes || [];
+        ALL_VIDEOS = indexData.videos || [];
+        ALL_DJS = indexData.djs || [];
+
+        // Actualizar estadísticas en el footer
+        $("#totalMixesCount").textContent = ALL_MIXES.length.toLocaleString();
+        $("#totalVideosCount").textContent = ALL_VIDEOS.length.toLocaleString();
+        $("#totalDJsCount").textContent = ALL_DJS.length.toLocaleString();
+
+        return true;
+      } catch (e) {
+        console.error('Error loading data:', e);
+        return false;
+      }
+    }
+
+    // ===== SISTEMA DE FILTROS =====
+    function filterContent() {
+      let content = [];
+
+      // Determinar qué contenido incluir basado en la pestaña activa
+      if (currentTab === 'all') {
+        // Combinar mixes y videos
+        const mixes = ALL_MIXES.map(m => ({ ...m, type: 'mix' }));
+        const videos = ALL_VIDEOS.map(v => ({ ...v, type: 'video' }));
+        content = [...mixes, ...videos];
+      } else if (currentTab === 'mixes') {
+        content = ALL_MIXES.map(m => ({ ...m, type: 'mix' }));
+      } else if (currentTab === 'videos') {
+        content = ALL_VIDEOS.map(v => ({ ...v, type: 'video' }));
+      }
+
+      // Aplicar filtros
+      filteredContent = content.filter(item => {
+        // Filtro de búsqueda
+        if (currentFilters.search) {
+          const searchTerm = currentFilters.search.toLowerCase();
+          const matchesTitle = item.title.toLowerCase().includes(searchTerm);
+          const matchesDJ = item.dj.toLowerCase().includes(searchTerm);
+          const matchesGenre = item.genre && item.genre.toLowerCase().includes(searchTerm);
+
+          if (!matchesTitle && !matchesDJ && !matchesGenre) {
+            return false;
+          }
+        }
+
+        // Filtro de géneros
+        if (currentFilters.genres.length > 0 && item.genre) {
+          if (!currentFilters.genres.includes(item.genre)) {
+            return false;
+          }
+        }
+
+        // Filtro de DJs
+        if (currentFilters.djs.length > 0) {
+          if (!currentFilters.djs.includes(item.dj)) {
+            return false;
+          }
+        }
+
+        // Filtro de tipos (solo para pestaña "all")
+        if (currentTab === 'all' && currentFilters.types.length > 0) {
+          if (!currentFilters.types.includes(item.type)) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      // Ordenar contenido
+      sortContent();
+
+      // Actualizar UI
+      updateResultsInfo();
+      renderContent();
+      renderPagination();
+    }
+
+    function sortContent() {
+      switch (currentSort) {
+        case 'recent':
+          filteredContent.sort((a, b) => {
+            const dateA = a.date ? new Date(a.date) : new Date(0);
+            const dateB = b.date ? new Date(b.date) : new Date(0);
+            return dateB - dateA;
+          });
+          break;
+
+        case 'popular':
+          filteredContent.sort((a, b) => {
+            const playsA = getPlays(a.id, a.type === 'video');
+            const playsB = getPlays(b.id, b.type === 'video');
+            return playsB - playsA;
+          });
+          break;
+
+        case 'downloads':
+          filteredContent.sort((a, b) => {
+            const downloadsA = getDownloads(a.id, a.type === 'video');
+            const downloadsB = getDownloads(b.id, b.type === 'video');
+            return downloadsB - downloadsA;
+          });
+          break;
+
+        case 'title':
+          filteredContent.sort((a, b) => a.title.localeCompare(b.title));
+          break;
+
+        default:
+          filteredContent.sort((a, b) => {
+            const dateA = a.date ? new Date(a.date) : new Date(0);
+            const dateB = b.date ? new Date(b.date) : new Date(0);
+            return dateB - dateA;
+          });
+      }
+    }
+
+    function updateResultsInfo() {
+      const count = filteredContent.length;
+      $("#resultsCount").textContent = `${count} elemento${count !== 1 ? 's' : ''} encontrado${count !== 1 ? 's' : ''}`;
+
+      // Actualizar título basado en filtros activos
+      let title = 'Todo el contenido';
+
+      if (currentTab === 'mixes') title = 'Mixes';
+      else if (currentTab === 'videos') title = 'Videos';
+
+      if (currentFilters.search) {
+        title = `Resultados para "${currentFilters.search}"`;
+      } else if (currentFilters.genres.length === 1) {
+        title = `${title} de ${currentFilters.genres[0]}`;
+      } else if (currentFilters.djs.length === 1) {
+        title = `${title} de ${currentFilters.djs[0]}`;
+      }
+
+      $("#resultsTitle").textContent = title;
+    }
+
+    // ===== SISTEMA DE CONTADORES =====
+    function getPlays(id, isVideo = false) {
+      const key = (isVideo ? 'v:' : 'm:') + id;
+      return counts[key]?.plays || 0;
+    }
+
+    function getDownloads(id, isVideo = false) {
+      const key = (isVideo ? 'v:' : 'm:') + id;
+      return counts[key]?.downloads || 0;
+    }
+
+    function updatePlayCount(id, isVideo = false) {
+      const key = (isVideo ? 'v:' : 'm:') + id;
+      const currentPlays = getPlays(id, isVideo);
+      counts[key] = { plays: currentPlays + 1, downloads: getDownloads(id, isVideo) };
+      localStorage.setItem(STORAGE_KEYS.COUNTS, JSON.stringify(counts));
+
+      // No actualizamos UI aquí porque podría estar en otra página
+    }
+
+    function updateDownloadCount(id, isVideo = false) {
+      const key = (isVideo ? 'v:' : 'm:') + id;
+      const currentDownloads = getDownloads(id, isVideo);
+      counts[key] = { plays: getPlays(id, isVideo), downloads: currentDownloads + 1 };
+      localStorage.setItem(STORAGE_KEYS.COUNTS, JSON.stringify(counts));
+    }
+
+    // ===== RENDERIZADO DE FILTROS =====
+    function renderFilterOptions() {
+      // Obtener géneros únicos de todo el contenido
+      const allGenres = [...new Set([
+        ...ALL_MIXES.map(m => m.genre),
+        ...ALL_VIDEOS.map(v => v.genre)
+      ])].filter(g => g).sort();
+
+      // Obtener DJs únicos
+      const allDJs = [...new Set([
+        ...ALL_MIXES.map(m => m.dj),
+        ...ALL_VIDEOS.map(v => v.dj)
+      ])].filter(d => d).sort();
+
+      // Renderizar filtros de géneros
+      const genreFiltersContainer = $("#genreFilters");
+      genreFiltersContainer.innerHTML = allGenres.map(genre => `
+        <button class="w-full text-left px-3 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors genre-filter" data-genre="${genre}">
+          ${genre}
+        </button>
+      `).join('');
+
+      // Renderizar filtros de DJs
+      const djFiltersContainer = $("#djFilters");
+      djFiltersContainer.innerHTML = allDJs.map(dj => `
+        <button class="w-full text-left px-3 py-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors dj-filter" data-dj="${dj}">
+          ${dj}
+        </button>
+      `).join('');
+    }
+
+    // ===== RENDERIZADO DE CONTENIDO =====
+    function renderContent() {
+      const start = (currentPage - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const paginatedContent = filteredContent.slice(start, end);
+
+      // Ocultar estado de carga
+      $("#loadingState").classList.add('hidden');
+
+      if (paginatedContent.length === 0) {
+        $("#contentGrid").classList.add('hidden');
+        $("#contentList").classList.add('hidden');
+        $("#emptyState").classList.remove('hidden');
+        $("#pagination").classList.add('hidden');
+        return;
+      }
+
+      $("#emptyState").classList.add('hidden');
+
+      if (currentView === 'grid') {
+        renderGridView(paginatedContent);
+      } else {
+        renderListView(paginatedContent);
+      }
+    }
+
+    function renderGridView(content) {
+      const grid = $("#contentGrid");
+      grid.innerHTML = '';
+
+      content.forEach(item => {
+        const isVideo = item.type === 'video';
+        const isYouTube = isVideo && (item.type === 'youtube' || item.url.includes('youtube') || item.url.includes('youtu.be'));
+
+        const card = document.createElement('div');
+        card.className = 'mix-card rounded-2xl border border-neutral-800 overflow-hidden bg-neutral-900 hover:bg-neutral-800 transition-colors fade-in';
+
+        // Contenido diferente para mixes vs videos
+        if (isVideo) {
+          const youTubeId = isYouTube ? extractYouTubeId(item.url) : null;
+          const thumbnail = item.cover || (isYouTube ? `https://img.youtube.com/vi/${youTubeId}/hqdefault.jpg` : '');
+
+          card.innerHTML = `
+            <div class="aspect-video relative overflow-hidden">
+              <img src="${thumbnail}" alt="${item.title}" class="cover-image w-full h-full object-cover" onerror="this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000%2Fsvg%22 viewBox=%220 0 400 225%22%3E%3Crect fill=%22%23333%22 width=%22400%22 height=%22225%22%2F%3E%3Ctext fill=%22%23fff%22 font-family=%22Arial%22 font-size=%2230%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3E${item.dj}%3C%2Ftext%3E%3C%2Fsvg%3E'" />
+              <div class="absolute top-2 right-2 px-2 py-1 rounded-full bg-black/70 text-xs">${item.duration}</div>
+              <div class="absolute bottom-2 left-2 px-2 py-1 rounded-full bg-red-600 text-xs">VIDEO</div>
+            </div>
+            <div class="p-4">
+              <h4 class="font-semibold line-clamp-2">${item.title}</h4>
+              <p class="text-sm text-neutral-400 mt-1">Por ${item.dj}</p>
+              <div class="mt-3 flex justify-between items-center text-xs text-neutral-400">
+                <span>▶️ ${getPlays(item.id, true)}</span>
+                <span>⬇️ ${getDownloads(item.id, true)}</span>
+                <span>${isYouTube ? 'YouTube' : (item.sizeMB ? item.sizeMB + ' MB' : 'Video')}</span>
+              </div>
+              <div class="mt-4 grid grid-cols-2 gap-2">
+                <button class="play-button py-2 rounded-xl bg-primary font-medium hover:bg-primary-hover content-play" data-id="${item.id}" data-type="video" data-url="${item.url}" data-isyoutube="${isYouTube}">Ver</button>
+                <a href="${item.url}" ${isYouTube ? 'target="_blank"' : 'download="' + item.title + ' - ' + item.dj + '.mp4"'} class="py-2 rounded-xl bg-neutral-800 font-medium hover:bg-neutral-700 text-center">${isYouTube ? 'Abrir' : 'Descargar'}</a>
+              </div>
+            </div>
+          `;
+        } else {
+          // Mix de audio
+          card.innerHTML = `
+            <div class="aspect-square relative overflow-hidden">
+              <img src="${item.cover}" alt="${item.title}" class="cover-image w-full h-full object-cover" onerror="this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000%2Fsvg%22 viewBox=%220 0 400 400%22%3E%3Crect fill=%22%23333%22 width=%22400%22 height=%22400%22%2F%3E%3Ctext fill=%22%23fff%22 font-family=%22Arial%22 font-size=%2230%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3E${item.dj}%3C%2Ftext%3E%3C%2Fsvg%3E'" />
+              <div class="absolute top-2 right-2 px-2 py-1 rounded-full bg-black/70 text-xs">${item.duration}</div>
+              <div class="absolute bottom-2 left-2 px-2 py-1 rounded-full bg-blue-600 text-xs">MIX</div>
+            </div>
+            <div class="p-4">
+              <h4 class="font-semibold line-clamp-2">${item.title}</h4>
+              <p class="text-sm text-neutral-400 mt-1">Por ${item.dj}</p>
+              <div class="mt-3 flex justify-between items-center text-xs text-neutral-400">
+                <span>▶️ ${getPlays(item.id, false)}</span>
+                <span>⬇️ ${getDownloads(item.id, false)}</span>
+                <span>${item.sizeMB} MB</span>
+              </div>
+              <div class="mt-4 grid grid-cols-2 gap-2">
+                <button class="play-button py-2 rounded-xl bg-primary font-medium hover:bg-primary-hover content-play" data-id="${item.id}" data-type="mix" data-url="${item.url}">Reproducir</button>
+                <a href="${item.url}" download="${item.title} - ${item.dj}.mp3" class="py-2 rounded-xl bg-neutral-800 font-medium hover:bg-neutral-700 text-center content-download" data-id="${item.id}" data-type="mix">Descargar</a>
+              </div>
+            </div>
+          `;
+        }
+
+        grid.appendChild(card);
+      });
+
+      $("#contentGrid").classList.remove('hidden');
+      $("#contentList").classList.add('hidden');
+    }
+
+    function renderListView(content) {
+      const list = $("#contentList");
+      list.innerHTML = '';
+
+      content.forEach(item => {
+        const isVideo = item.type === 'video';
+        const isYouTube = isVideo && (item.type === 'youtube' || item.url.includes('youtube') || item.url.includes('youtu.be'));
+
+        const listItem = document.createElement('div');
+        listItem.className = 'border border-neutral-800 rounded-2xl bg-neutral-900 hover:bg-neutral-800 transition-colors p-4 mb-4 fade-in';
+
+        listItem.innerHTML = `
+          <div class="flex flex-col md:flex-row gap-4">
+            <div class="w-full md:w-24 ${isVideo ? 'aspect-video' : 'aspect-square'} rounded-xl overflow-hidden flex-shrink-0">
+              <img src="${isVideo ? (item.cover || (isYouTube ? `https://img.youtube.com/vi/${extractYouTubeId(item.url)}/hqdefault.jpg` : '')) : item.cover}" 
+                   alt="${item.title}" 
+                   class="w-full h-full object-cover" 
+                   onerror="this.style.display='none'">
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="font-semibold text-lg">${item.title}</div>
+                  <div class="text-neutral-400 text-sm mt-1">Por ${item.dj} • ${item.genre || 'Sin género'} • ${isVideo ? 'Video' : 'Mix'}</div>
+                </div>
+                <span class="px-2 py-1 rounded-full text-xs ${isVideo ? 'bg-red-900 text-red-300' : 'bg-blue-900 text-blue-300'}">${isVideo ? 'VIDEO' : 'MIX'}</span>
+              </div>
+              <div class="mt-3 flex gap-4 text-sm text-neutral-400">
+                <span>▶️ ${getPlays(item.id, isVideo)} reproducciones</span>
+                <span>⬇️ ${getDownloads(item.id, isVideo)} descargas</span>
+                <span>${item.duration}</span>
+                ${item.sizeMB ? `<span>${item.sizeMB} MB</span>` : ''}
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button class="px-4 py-2 rounded-xl bg-primary font-medium hover:bg-primary-hover content-play" data-id="${item.id}" data-type="${item.type}" data-url="${item.url}" data-isyoutube="${isYouTube}">
+                ${isVideo ? 'Ver' : 'Reproducir'}
+              </button>
+              <a href="${item.url}" ${isYouTube ? 'target="_blank"' : 'download="' + item.title + ' - ' + item.dj + (isVideo ? '.mp4' : '.mp3') + '"'} class="px-4 py-2 rounded-xl bg-neutral-800 font-medium hover:bg-neutral-700 text-center content-download" data-id="${item.id}" data-type="${item.type}">
+                ${isYouTube ? 'Abrir' : 'Descargar'}
+              </a>
+            </div>
+          </div>
+        `;
+
+        list.appendChild(listItem);
+      });
+
+      $("#contentList").classList.remove('hidden');
+      $("#contentGrid").classList.add('hidden');
+    }
+
+    function extractYouTubeId(url) {
+      const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+      const match = url.match(regex);
+      return match ? match[1] : null;
+    }
+
+    // ===== PAGINACIÓN =====
+    function renderPagination() {
+      const totalPages = Math.ceil(filteredContent.length / itemsPerPage);
+      const paginationContainer = $("#pagination");
+      paginationContainer.innerHTML = '';
+
+      if (totalPages <= 1) {
+        paginationContainer.classList.add('hidden');
+        return;
+      }
+
+      paginationContainer.classList.remove('hidden');
+
+      // Botón Anterior
+      if (currentPage > 1) {
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors';
+        prevBtn.innerHTML = '&laquo; Anterior';
+        prevBtn.addEventListener('click', () => {
+          currentPage--;
+          renderContent();
+          renderPagination();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        paginationContainer.appendChild(prevBtn);
+      }
+
+      // Números de página
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, startPage + 4);
+
+      for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `px-4 py-2 rounded-lg ${i === currentPage ? 'bg-primary text-white' : 'bg-neutral-800 hover:bg-neutral-700'} transition-colors`;
+        pageBtn.textContent = i;
+        pageBtn.addEventListener('click', () => {
+          currentPage = i;
+          renderContent();
+          renderPagination();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        paginationContainer.appendChild(pageBtn);
+      }
+
+      // Botón Siguiente
+      if (currentPage < totalPages) {
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors';
+        nextBtn.innerHTML = 'Siguiente &raquo;';
+        nextBtn.addEventListener('click', () => {
+          currentPage++;
+          renderContent();
+          renderPagination();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        paginationContainer.appendChild(nextBtn);
+      }
+
+      // Información de página
+      const pageInfo = document.createElement('span');
+      pageInfo.className = 'text-sm text-neutral-400';
+      pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+      paginationContainer.appendChild(pageInfo);
+    }
+
+    // ===== MODAL DE REPRODUCCIÓN =====
+    function openPlayModal(item) {
+      const isVideo = item.type === 'video';
+      const isYouTube = isVideo && (item.url.includes('youtube') || item.url.includes('youtu.be'));
+
+      $("#modalTitle").textContent = item.title;
+
+      let modalContent = '';
+
+      if (isVideo) {
+        if (isYouTube) {
+          const videoId = extractYouTubeId(item.url);
+          modalContent = `
+            <div class="aspect-video bg-black rounded-lg overflow-hidden">
+              <iframe src="https://www.youtube.com/embed/${videoId}" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
+            </div>
+            <div class="mt-4">
+              <h4 class="font-semibold">${item.title}</h4>
+              <p class="text-neutral-400">Por ${item.dj}</p>
+              <p class="text-sm text-neutral-400 mt-2">${item.genre} • ${item.duration}</p>
+            </div>
+          `;
+        } else {
+          modalContent = `
+            <div class="aspect-video bg-black rounded-lg overflow-hidden">
+              <video src="${item.url}" controls class="w-full h-full" poster="${item.cover || ''}"></video>
+            </div>
+            <div class="mt-4">
+              <h4 class="font-semibold">${item.title}</h4>
+              <p class="text-neutral-400">Por ${item.dj}</p>
+              <p class="text-sm text-neutral-400 mt-2">${item.genre} • ${item.duration} • ${item.sizeMB} MB</p>
+            </div>
+          `;
+        }
+      } else {
+        // Mix de audio
+        modalContent = `
+          <div class="bg-neutral-800 rounded-lg p-4">
+            <audio src="${item.url}" controls class="w-full" preload="metadata"></audio>
+          </div>
+          <div class="mt-4">
+            <h4 class="font-semibold">${item.title}</h4>
+            <p class="text-neutral-400">Por ${item.dj}</p>
+            <p class="text-sm text-neutral-400 mt-2">${item.genre} • ${item.duration} • ${item.sizeMB} MB</p>
+            ${item.tracks && item.tracks.length > 0 ? `
+              <div class="mt-3">
+                <h5 class="font-semibold text-sm">Tracklist:</h5>
+                <ol class="list-decimal list-inside text-sm text-neutral-400 mt-1">
+                  ${item.tracks.map(track => `<li>${track}</li>`).join('')}
+                </ol>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      $("#modalContent").innerHTML = modalContent;
+
+      // Configurar botón de descarga
+      $("#modalDownload").onclick = () => {
+        updateDownloadCount(item.id, isVideo);
+        if (isVideo && !isYouTube) {
+          const link = document.createElement('a');
+          link.href = item.url;
+          link.download = `${item.title} - ${item.dj}.mp4`;
+          link.click();
+        } else if (!isVideo) {
+          const link = document.createElement('a');
+          link.href = item.url;
+          link.download = `${item.title} - ${item.dj}.mp3`;
+          link.click();
+        } else {
+          window.open(item.url, '_blank');
+        }
+        showNotification('Descarga iniciada');
+      };
+
+      $("#playModal").classList.remove('hidden');
+      updatePlayCount(item.id, isVideo);
+    }
+
+    // ===== EVENT HANDLERS =====
+    function setupEventListeners() {
+      // Búsqueda
+      $("#searchContent").addEventListener('input', (e) => {
+        currentFilters.search = e.target.value;
+        currentPage = 1;
+        filterContent();
+      });
+
+      // Ordenamiento
+      $$('.sort-option').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          currentSort = e.target.dataset.sort;
+          $$('.sort-option').forEach(b => b.classList.remove('filter-active'));
+          e.target.classList.add('filter-active');
+          filterContent();
+        });
+      });
+
+      // Filtros de género
+      document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('genre-filter')) {
+          const genre = e.target.dataset.genre;
+          if (currentFilters.genres.includes(genre)) {
+            currentFilters.genres = currentFilters.genres.filter(g => g !== genre);
+            e.target.classList.remove('filter-active');
+          } else {
+            currentFilters.genres.push(genre);
+            e.target.classList.add('filter-active');
+          }
+          currentPage = 1;
+          filterContent();
+        }
+      });
+
+      // Filtros de DJ
+      document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('dj-filter')) {
+          const dj = e.target.dataset.dj;
+          if (currentFilters.djs.includes(dj)) {
+            currentFilters.djs = currentFilters.djs.filter(d => d !== dj);
+            e.target.classList.remove('filter-active');
+          } else {
+            currentFilters.djs.push(dj);
+            e.target.classList.add('filter-active');
+          }
+          currentPage = 1;
+          filterContent();
+        }
+      });
+
+      // Filtros de tipo (solo para pestaña "all")
+      document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('type-filter')) {
+          const type = e.target.dataset.type;
+          if (type === 'all') {
+            currentFilters.types = ['mix', 'video'];
+            $$('.type-filter').forEach(b => b.classList.remove('filter-active'));
+            e.target.classList.add('filter-active');
+          } else {
+            if (currentFilters.types.includes(type)) {
+              currentFilters.types = currentFilters.types.filter(t => t !== type);
+              e.target.classList.remove('filter-active');
+            } else {
+              currentFilters.types.push(type);
+              e.target.classList.add('filter-active');
+            }
+            // Actualizar botón "all"
+            $$('.type-filter[data-type="all"]').forEach(b => b.classList.remove('filter-active'));
+          }
+          currentPage = 1;
+          filterContent();
+        }
+      });
+
+      // Limpiar filtros
+      $("#clearFilters").addEventListener('click', () => {
+        currentFilters = {
+          search: '',
+          genres: [],
+          djs: [],
+          types: ['mix', 'video']
+        };
+
+        $("#searchContent").value = '';
+        $$('.genre-filter, .dj-filter, .type-filter').forEach(btn => btn.classList.remove('filter-active'));
+        $$('.sort-option').forEach(btn => btn.classList.remove('filter-active'));
+        $$('.sort-option[data-sort="recent"]').classList.add('filter-active');
+        $$('.type-filter[data-type="all"]').classList.add('filter-active');
+
+        currentSort = 'recent';
+        currentPage = 1;
+        filterContent();
+        showNotification('Filtros limpiados');
+      });
+
+      // Vista (grid/list)
+      $$('.view-toggle').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          currentView = e.target.closest('.view-toggle').dataset.view;
+          $$('.view-toggle').forEach(b => {
+            if (b.dataset.view === currentView) {
+              b.classList.add('bg-primary');
+            } else {
+              b.classList.remove('bg-primary');
+            }
+          });
+          renderContent();
+        });
+      });
+
+      // Items por página
+      $("#itemsPerPage").addEventListener('change', (e) => {
+        itemsPerPage = parseInt(e.target.value);
+        currentPage = 1;
+        renderContent();
+        renderPagination();
+      });
+
+      // Pestañas principales
+      $$('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const tab = e.target.dataset.tab;
+          currentTab = tab;
+
+          // Actualizar UI de pestañas
+          $$('.tab-btn').forEach(b => {
+            if (b.dataset.tab === tab) {
+              b.classList.remove('btn');
+              b.classList.add('tab-active');
+            } else {
+              b.classList.remove('tab-active');
+              b.classList.add('btn');
+            }
+          });
+
+          // Mostrar/ocultar filtros de tipo
+          if (tab === 'all') {
+            $("#typeFiltersSection").classList.remove('hidden');
+          } else {
+            $("#typeFiltersSection").classList.add('hidden');
+          }
+
+          currentPage = 1;
+          filterContent();
+        });
+      });
+
+      // Reproducir/ver contenido
+      document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('content-play')) {
+          const id = parseInt(e.target.dataset.id);
+          const type = e.target.dataset.type;
+          const url = e.target.dataset.url;
+          const isYouTube = e.target.dataset.isyoutube === 'true';
+
+          const item = filteredContent.find(c => c.id === id && c.type === type);
+          if (item) {
+            if (type === 'video' && isYouTube) {
+              // YouTube - abrir en nueva pestaña
+              window.open(url, '_blank');
+              updatePlayCount(id, true);
+              showNotification('Abriendo video de YouTube');
+            } else {
+              // Otro contenido - abrir modal
+              openPlayModal(item);
+            }
+          }
+        }
+
+        // Descargas
+        if (e.target.classList.contains('content-download')) {
+          const id = parseInt(e.target.dataset.id);
+          const type = e.target.dataset.type;
+          const isVideo = type === 'video';
+
+          updateDownloadCount(id, isVideo);
+          showNotification('Descarga iniciada');
+        }
+      });
+
+      // Modal
+      $("#closeModal").addEventListener('click', () => {
+        $("#playModal").classList.add('hidden');
+      });
+
+      $("#modalClose").addEventListener('click', () => {
+        $("#playModal").classList.add('hidden');
+      });
+
+      $("#playModal").addEventListener('click', (e) => {
+        if (e.target === $("#playModal")) {
+          $("#playModal").classList.add('hidden');
+        }
+      });
+
+      // Menú móvil
+      $("#mobileBtn").addEventListener('click', () => {
+        $("#mobileMenu").classList.toggle('hidden');
+        const expanded = $("#mobileMenu").classList.contains('hidden') ? 'false' : 'true';
+        $("#mobileBtn").setAttribute('aria-expanded', expanded);
+      });
+
+      // Sincronización en tiempo real
+      window.addEventListener('storage', (e) => {
+        if (e.key === STORAGE_KEYS.INDEX_DATA || e.key === STORAGE_KEYS.COUNTS) {
+          showNotification('Actualizando contenido...', 2000);
+          setTimeout(() => {
+            if (loadData()) {
+              renderFilterOptions();
+              filterContent();
+            }
+          }, 1000);
+        }
+      });
+    }
+
+    // ===== INICIALIZACIÓN =====
+    function init() {
+      // Cargar datos
+      if (loadData()) {
+        // Ocultar loading state
+        $("#loadingState").classList.add('hidden');
+
+        // Renderizar interfaz
+        renderFilterOptions();
+        filterContent();
+        setupEventListeners();
+
+        // Configurar vista activa
+        $("#viewGrid").classList.add('bg-primary');
+        $$('.type-filter[data-type="all"]').classList.add('filter-active');
+      } else {
+        $("#loadingState").innerHTML = '<span class="text-red-400">Error al cargar los datos</span>';
+      }
+    }
+
+    // Iniciar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+
+</html>

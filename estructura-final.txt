@@ -1,0 +1,17 @@
+panda-truck/
+├── 📄 dashboard.html (tu dashboard principal)
+├── 📄 index.html (sitio principal)
+├── 🚀 migrate.html (PANEL DE MIGRACIÓN - NUEVO)
+├── 📦 backup.php (respaldos automáticos - NUEVO)
+├── 🔄 migrate.php (generador config - NUEVO)
+├── 📋 INSTRUCCIONES-MIGRACION.md (guía - NUEVO)
+├── api/
+│   ├── config.php (config local)
+│   ├── config-hosting.php (config hosting - NUEVO)
+│   ├── cargar.php
+│   └── guardar.php
+├── backups/ (respaldos automáticos)
+│   └── backup-2024-01-15-10-30-00.sql
+├── img/
+│   └── logo.png
+└── .htaccess (config servidor - NUEVO)

@@ -1,0 +1,2299 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panda Truck Reloaded – Dashboard</title>
+
+  <!-- Favicon -->
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎧</text></svg>"
+    type="image/svg+xml">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --primary-color: #e1261d;
+      --primary-hover: #c81e16;
+    }
+
+    .stats-card {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    }
+
+    .logo-custom {
+      text-align: center;
+      padding: 12px 0;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      border-bottom: 1px solid var(--primary-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .logo-custom img {
+      max-height: 60px;
+      width: auto;
+    }
+
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: var(--primary-color);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .notification.show {
+      opacity: 1;
+    }
+
+    .notification.error {
+      background: #ef4444;
+    }
+
+    .dashboard-nav {
+      background: rgba(38, 38, 38, 0.95);
+    }
+
+    .nav-tab {
+      padding: 12px 20px;
+      border-bottom: 2px solid transparent;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+
+    .nav-tab.active {
+      border-bottom-color: var(--primary-color);
+      color: white;
+    }
+
+    .nav-tab:hover:not(.active) {
+      border-bottom-color: #666;
+    }
+
+    .form-input {
+      background: rgba(38, 38, 38, 0.8);
+      border: 1px solid #404040;
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: white;
+      transition: all 0.3s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(225, 38, 29, 0.2);
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: white;
+      border-radius: 12px;
+      padding: 10px 20px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background-color: #262626;
+      color: white;
+      border-radius: 12px;
+      padding: 10px 20px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      background-color: #333;
+    }
+
+    .content-card {
+      background: rgba(38, 38, 38, 0.6);
+      border: 1px solid #404040;
+      border-radius: 16px;
+    }
+
+    .modal-overlay {
+      background: rgba(0, 0, 0, 0.7);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: #1a1a1a;
+      border: 1px solid #404040;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      max-width: 500px;
+      width: 90%;
+      padding: 20px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .table-row:hover {
+      background: rgba(64, 64, 64, 0.3);
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, .3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Estilos para el login */
+    .login-container {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: rgba(23, 23, 23, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Nuevos estilos para banners */
+    .banner-preview {
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 8px;
+      background: #1a1a1a;
+      padding: 8px;
+    }
+
+    .banner-preview img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-active {
+      background: #065f46;
+      color: #34d399;
+    }
+
+    .status-expired {
+      background: #7f1d1d;
+      color: #fca5a5;
+    }
+
+    .status-scheduled {
+      background: #78350f;
+      color: #fbbf24;
+    }
+
+    .stats-small {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    /* Tamaños específicos para cada tipo */
+    .banner-sidebar {
+      width: 300px;
+      height: 250px;
+    }
+
+    .banner-horizontal {
+      width: 728px;
+      height: 90px;
+    }
+
+    .banner-sponsor {
+      width: 150px;
+      height: 60px;
+      transition: transform 0.3s ease;
+    }
+
+    .banner-sponsor:hover {
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+
+<body class="bg-neutral-950 text-neutral-100 min-h-screen">
+  <!-- PANTALLA DE LOGIN -->
+  <div id="loginScreen" class="login-container">
+    <div class="login-card">
+      <div class="text-center mb-8">
+        <div class="logo-custom mb-4 rounded-xl">
+          <img src="img/logo.png" alt="PANDA TRUCK RELOADED" />
+        </div>
+        <h1 class="text-3xl font-bold mb-2">Panda Truck Reloaded</h1>
+        <p class="text-neutral-400">Panel de Administración</p>
+      </div>
+
+      <form id="loginForm" class="space-y-6">
+        <div>
+          <label class="block text-sm font-medium mb-2">Usuario</label>
+          <input type="text" class="form-input w-full" placeholder="Ingresa tu usuario" required>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">Contraseña</label>
+          <input type="password" class="form-input w-full" placeholder="Ingresa tu contraseña" required>
+        </div>
+
+        <button type="submit" class="btn-primary w-full font-medium">
+          Iniciar Sesión
+        </button>
+      </form>
+
+      <div class="mt-6 text-center text-sm text-neutral-400">
+        <p>Credenciales por defecto: admin / panda2024</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD PRINCIPAL -->
+  <div id="dashboard" class="hidden">
+    <!-- LOGO PERSONALIZADO -->
+    <div class="logo-custom">
+      <img src="img/logo.png" alt="PANDA TRUCK RELOADED" id="current-logo" />
+    </div>
+
+    <!-- NAVEGACIÓN DEL DASHBOARD -->
+    <header class="border-b border-neutral-800 dashboard-nav">
+      <div class="max-w-7xl mx-auto px-4">
+        <div class="flex justify-between items-center py-3">
+          <h1 class="text-xl font-bold">Panel de Administración</h1>
+          <div class="flex items-center gap-4">
+            <span class="text-sm text-neutral-400">Hola, <span id="usernameDisplay">Admin</span></span>
+            <a href="index.html"
+              class="px-3 py-1.5 rounded-xl bg-neutral-800 text-sm hover:bg-neutral-700 transition-colors">Volver al
+              sitio</a>
+            <button id="logoutBtn"
+              class="px-3 py-1.5 rounded-xl bg-primary text-sm hover:bg-primary-hover transition-colors">Cerrar
+              sesión</button>
+          </div>
+        </div>
+
+        <nav class="flex space-x-2 overflow-x-auto">
+          <button class="nav-tab active" data-tab="stats">Estadísticas</button>
+          <button class="nav-tab" data-tab="mixes">Mixes</button>
+          <button class="nav-tab" data-tab="videos">Videos</button>
+          <button class="nav-tab" data-tab="djs">DJs</button>
+          <button class="nav-tab" data-tab="events">Eventos</button>
+          <button class="nav-tab" data-tab="ads">Publicidad</button>
+          <button class="nav-tab" data-tab="player">Reproductor Principal</button>
+          <button class="nav-tab" data-tab="customize">Personalizar Web</button>
+          <button class="nav-tab" data-tab="navigation">Navegación</button>
+          <button class="nav-tab" data-tab="settings">Configuración</button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+      <!-- ESTADÍSTICAS -->
+      <div id="stats-content" class="tab-content">
+        <h2 class="text-2xl font-bold mb-6">Estadísticas Generales</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          <div class="stats-card rounded-2xl p-5 border border-neutral-800">
+            <div class="text-3xl font-extrabold" id="stat-total-mixes">0</div>
+            <div class="text-sm text-neutral-400 mt-1">Mixes totales</div>
+          </div>
+          <div class="stats-card rounded-2xl p-5 border border-neutral-800">
+            <div class="text-3xl font-extrabold" id="stat-total-videos">0</div>
+            <div class="text-sm text-neutral-400 mt-1">Videos totales</div>
+          </div>
+          <div class="stats-card rounded-2xl p-5 border border-neutral-800">
+            <div class="text-3xl font-extrabold" id="stat-total-plays">0</div>
+            <div class="text-sm text-neutral-400 mt-1">Reproducciones</div>
+          </div>
+          <div class="stats-card rounded-2xl p-5 border border-neutral-800">
+            <div class="text-3xl font-extrabold" id="stat-total-downloads">0</div>
+            <div class="text-sm text-neutral-400 mt-1">Descargas</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="content-card p-6">
+            <h3 class="text-lg font-semibold mb-4">Mixes más populares</h3>
+            <div id="top-mixes" class="space-y-3">
+              <!-- Los mixes populares se cargarán aquí -->
+            </div>
+          </div>
+
+          <div class="content-card p-6">
+            <h3 class="text-lg font-semibold mb-4">Videos más populares</h3>
+            <div id="top-videos" class="space-y-3">
+              <!-- Los videos populares se cargarán aquí -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MIXES -->
+      <div id="mixes-content" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold">Gestión de Mixes</h2>
+          <button id="add-mix-btn" class="btn-primary">Añadir Mix</button>
+        </div>
+
+        <div class="content-card p-5 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <input type="text" id="search-mixes" class="form-input" placeholder="Buscar mix...">
+            <select id="filter-mix-genre" class="form-input">
+              <option value="">Todos los géneros</option>
+              <option value="Salsa">Salsa</option>
+              <option value="Reggaetón">Reggaetón</option>
+              <option value="Urbano">Urbano</option>
+              <option value="Merengue">Merengue</option>
+              <option value="Bachata">Bachata</option>
+              <option value="Reggae">Reggae</option>
+              <option value="Dembow">Dembow</option>
+              <option value="Hip Hop">Hip Hop</option>
+              <option value="Electrónica">Electrónica</option>
+              <option value="Tìpico">Tìpico</option>
+              <option value="Afrobeat">Afrobeat</option>
+              <option value="Dancehall">Dancehall</option>
+              <option value="Pop">Pop</option>
+              <option value="Plena Retro">Plena Retro</option>
+              <option value="Rock">Rock</option>
+              <option value="Afro House">Afro House</option>
+              <option value="Haitiano">Haitiano</option>
+              <option value="Sound Car">Sound Car</option>
+              <option value="Variado-mix">Variado-mix</option>
+            </select>
+            <button id="export-mixes" class="btn-secondary">Exportar CSV</button>
+          </div>
+        </div>
+
+        <div class="content-card overflow-hidden">
+          <table class="w-full">
+            <thead class="bg-neutral-900">
+              <tr>
+                <th class="text-left p-4">Título</th>
+                <th class="text-left p-4">DJ</th>
+                <th class="text-left p-4">Género</th>
+                <th class="text-left p-4">Reproducciones</th>
+                <th class="text-left p-4">Descargas</th>
+                <th class="text-left p-4">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="mixes-table" class="divide-y divide-neutral-800">
+              <!-- Los mixes se cargarán aquí -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VIDEOS -->
+      <div id="videos-content" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold">Gestión de Videos</h2>
+          <button id="add-video-btn" class="btn-primary">Añadir Video</button>
+        </div>
+
+        <div class="content-card p-5 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <input type="text" id="search-videos" class="form-input" placeholder="Buscar video...">
+            <select id="filter-video-type" class="form-input">
+              <option value="">Todos los tipos</option>
+              <option value="mp4">MP4</option>
+              <option value="youtube">YouTube</option>
+            </select>
+            <button id="export-videos" class="btn-secondary">Exportar CSV</button>
+          </div>
+        </div>
+
+        <div class="content-card overflow-hidden">
+          <table class="w-full">
+            <thead class="bg-neutral-900">
+              <tr>
+                <th class="text-left p-4">Título</th>
+                <th class="text-left p-4">DJ/Creador</th>
+                <th class="text-left p-4">Tipo</th>
+                <th class="text-left p-4">Reproducciones</th>
+                <th class="text-left p-4">Descargas</th>
+                <th class="text-left p-4">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="videos-table" class="divide-y divide-neutral-800">
+              <!-- Los videos se cargarán aquí -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DJs -->
+      <div id="djs-content" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold">Gestión de DJs</h2>
+          <button id="add-dj-btn" class="btn-primary">Añadir DJ</button>
+        </div>
+
+        <div class="content-card p-5 mb-6">
+          <input type="text" id="search-djs" class="form-input w-full" placeholder="Buscar DJ...">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="djs-grid">
+          <!-- Los DJs se cargarán aquí -->
+        </div>
+      </div>
+
+      <!-- EVENTOS -->
+      <div id="events-content" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold">Gestión de Eventos</h2>
+          <button id="add-event-btn" class="btn-primary">Añadir Evento</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="events-grid">
+          <!-- Los eventos se cargarán aquí -->
+        </div>
+      </div>
+
+      <!-- PUBLICIDAD - ACTUALIZADO SIN URL DE DESTINO -->
+      <div id="ads-content" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold">Gestión de Publicidad</h2>
+          <button id="add-banner-btn" class="btn-primary">Añadir Banner</button>
+        </div>
+
+        <!-- Estadísticas de Publicidad -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-6">
+          <div class="stats-card rounded-2xl p-5 border border-neutral-800">
+            <div class="text-3xl font-extrabold" id="stat-total-banners">0</div>
+            <div class="text-sm text-neutral-400 mt-1">Banners Activos</div>
+          </div>
+          <div class="stats-card rounded-2xl p-5 border border-neutral-800">
+            <div class="text-3xl font-extrabold" id="stat-total-impressions">0</div>
+            <div class="text-sm text-neutral-400 mt-1">Impresiones</div>
+          </div>
+          <div class="stats-card rounded-2xl p-5 border border-neutral-800">
+            <div class="text-3xl font-extrabold" id="stat-total-clicks">0</div>
+            <div class="text-sm text-neutral-400 mt-1">Clicks</div>
+          </div>
+          <div class="stats-card rounded-2xl p-5 border border-neutral-800">
+            <div class="text-3xl font-extrabold" id="stat-ctr">0%</div>
+            <div class="text-sm text-neutral-400 mt-1">CTR</div>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="content-card p-5 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <select id="filter-banner-type" class="form-input">
+              <option value="">Todos los tipos</option>
+              <option value="sidebar">Sidebar</option>
+              <option value="horizontal">Horizontal</option>
+              <option value="sponsor">Patrocinador</option>
+            </select>
+            <select id="filter-banner-status" class="form-input">
+              <option value="">Todos los estados</option>
+              <option value="active">Activos</option>
+              <option value="expired">Expirados</option>
+              <option value="scheduled">Programados</option>
+            </select>
+            <input type="text" id="search-banners" class="form-input" placeholder="Buscar banner...">
+            <button id="export-banners" class="btn-secondary">Exportar CSV</button>
+          </div>
+        </div>
+
+        <!-- Tabla de Banners -->
+        <div class="content-card overflow-hidden">
+          <table class="w-full">
+            <thead class="bg-neutral-900">
+              <tr>
+                <th class="text-left p-4">Banner</th>
+                <th class="text-left p-4">Nombre</th>
+                <th class="text-left p-4">Tipo</th>
+                <th class="text-left p-4">Fechas</th>
+                <th class="text-left p-4">Estadísticas</th>
+                <th class="text-left p-4">Estado</th>
+                <th class="text-left p-4">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="banners-table" class="divide-y divide-neutral-800">
+              <!-- Los banners se cargarán aquí -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REPRODUCTOR PRINCIPAL -->
+      <div id="player-content" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold">Reproductor Principal</h2>
+        </div>
+
+        <div class="content-card p-6 mb-6">
+          <h3 class="text-lg font-semibold mb-4">Configurar Video Principal</h3>
+          <form id="player-form" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Tipo de Video</label>
+              <select class="form-input w-full" name="playerType" id="playerType" required>
+                <option value="mp4">MP4</option>
+                <option value="youtube">YouTube</option>
+              </select>
+            </div>
+
+            <div id="mp4-fields">
+              <div>
+                <label class="block text-sm font-medium mb-2">URL del Video MP4</label>
+                <input type="url" class="form-input w-full" name="mp4Url" placeholder="https://ejemplo.com/video.mp4">
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2">Poster/Thumbnail</label>
+                <input type="url" class="form-input w-full" name="mp4Poster"
+                  placeholder="https://ejemplo.com/poster.jpg">
+              </div>
+            </div>
+
+            <div id="youtube-fields" class="hidden">
+              <div>
+                <label class="block text-sm font-medium mb-2">ID de YouTube</label>
+                <input type="text" class="form-input w-full" name="youtubeId" placeholder="WVvip980HRM">
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2">Tiempo de inicio (segundos)</label>
+                <input type="number" class="form-input w-full" name="youtubeStart" placeholder="1810">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-2">Título del Video</label>
+              <input type="text" class="form-input w-full" name="playerTitle" placeholder="Título del video">
+            </div>
+
+            <button type="submit" class="btn-primary w-full">Guardar Configuración</button>
+          </form>
+        </div>
+
+        <div class="content-card p-6">
+          <h3 class="text-lg font-semibold mb-4">Configurar Radio</h3>
+          <form id="radio-form" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">URL del Stream de Radio</label>
+              <input type="url" class="form-input w-full" name="radioUrl"
+                placeholder="https://stream.zeno.fm/vjsa6jiwafavv" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Nombre de la Radio</label>
+              <input type="text" class="form-input w-full" name="radioName" placeholder="Radio Online" required>
+            </div>
+            <button type="submit" class="btn-primary w-full">Guardar Configuración de Radio</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- PERSONALIZAR WEB -->
+      <div id="customize-content" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold">Personalizar Web</h2>
+        </div>
+
+        <div class="content-card p-6 mb-6">
+          <h3 class="text-lg font-semibold mb-4">Logo del Sitio</h3>
+          <form id="logo-form" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">URL del Logo</label>
+              <input type="url" class="form-input w-full" name="logoUrl" placeholder="https://ejemplo.com/logo.png"
+                required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Texto Alternativo</label>
+              <input type="text" class="form-input w-full" name="logoAlt" placeholder="Panda Truck Reloaded" required>
+            </div>
+            <button type="submit" class="btn-primary w-full">Guardar Logo</button>
+          </form>
+        </div>
+
+        <div class="content-card p-6 mb-6">
+          <h3 class="text-lg font-semibold mb-4">Favicon</h3>
+          <form id="favicon-form" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">URL del Favicon</label>
+              <input type="url" class="form-input w-full" name="faviconUrl"
+                placeholder="https://ejemplo.com/favicon.ico">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Emoji alternativo (si no hay favicon)</label>
+              <input type="text" class="form-input w-full" name="faviconEmoji" placeholder="🎧" required>
+            </div>
+            <button type="submit" class="btn-primary w-full">Guardar Favicon</button>
+          </form>
+        </div>
+
+        <div class="content-card p-6">
+          <h3 class="text-lg font-semibold mb-4">Información General</h3>
+          <form id="info-form" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Título del Sitio</label>
+              <input type="text" class="form-input w-full" name="siteTitle" placeholder="Panda Truck Reloaded" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Descripción</label>
+              <textarea class="form-input w-full" name="siteDescription" rows="3" placeholder="Descripción del sitio..."
+                required></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Texto del Footer</label>
+              <textarea class="form-input w-full" name="footerText" rows="2" placeholder="Texto del pie de página..."
+                required></textarea>
+            </div>
+            <button type="submit" class="btn-primary w-full">Guardar Información</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- CONFIGURACIÓN DE NAVEGACIÓN -->
+      <div id="navigation-content" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold">Configuración de Navegación</h2>
+        </div>
+
+        <div class="content-card p-6 mb-6">
+          <h3 class="text-lg font-semibold mb-4">Enlaces entre páginas</h3>
+          <form id="navigation-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-2">Texto para "Todos los Mixes"</label>
+                <input type="text" class="form-input w-full" name="mixesLinkText" placeholder="Todos los mixes"
+                  required>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2">Texto para "Todos los Videos"</label>
+                <input type="text" class="form-input w-full" name="videosLinkText" placeholder="Todos los videos"
+                  required>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Plantilla URL para perfiles DJ</label>
+              <input type="text" class="form-input w-full" name="djProfileUrl" placeholder="dj.html?dj={nombre}"
+                required>
+            </div>
+            <button type="submit" class="btn-primary w-full">Guardar Configuración de Navegación</button>
+          </form>
+        </div>
+
+        <div class="content-card p-6">
+          <h3 class="text-lg font-semibold mb-4">Sincronización con el sitio</h3>
+          <div class="space-y-4">
+            <p class="text-neutral-300">Los cambios realizados en el dashboard se sincronizan automáticamente con las
+              páginas del sitio web.</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button id="sync-index" class="btn-primary">Sincronizar Index</button>
+              <button id="sync-mixes" class="btn-primary">Sincronizar Mixes</button>
+              <button id="sync-all" class="btn-primary">Sincronizar Todo</button>
+            </div>
+            <div id="sync-status" class="text-sm text-neutral-400 mt-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIGURACIÓN DEL SISTEMA -->
+      <div id="settings-content" class="tab-content hidden">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold">Configuración del Sistema</h2>
+        </div>
+
+        <div class="content-card p-6">
+          <h3 class="text-lg font-semibold mb-4">Credenciales de Acceso</h3>
+          <form id="settings-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-2">Usuario Admin</label>
+                <input type="text" class="form-input w-full" name="adminUser" placeholder="admin" required>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-2">Nueva Contraseña</label>
+                <input type="password" class="form-input w-full" name="adminPassword"
+                  placeholder="Dejar en blanco para no cambiar">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Confirmar Contraseña</label>
+              <input type="password" class="form-input w-full" name="adminPasswordConfirm"
+                placeholder="Confirmar nueva contraseña">
+            </div>
+            <button type="submit" class="btn-primary w-full">Actualizar Credenciales</button>
+          </form>
+        </div>
+
+        <div class="content-card p-6 mt-6">
+          <h3 class="text-lg font-semibold mb-4">Información del Sistema</h3>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between">
+              <span class="text-neutral-400">Versión:</span>
+              <span>1.0.0</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-neutral-400">Último acceso:</span>
+              <span id="lastLogin">-</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-neutral-400">Sesión expira:</span>
+              <span id="sessionExpires">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- MODAL PARA AÑADIR/EDITAR CONTENIDO -->
+    <div id="content-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="flex justify-between items-center mb-5">
+          <h3 id="modal-title" class="text-lg font-semibold">Añadir Banner</h3>
+          <button id="close-modal" class="text-neutral-400 hover:text-white text-xl">✕</button>
+        </div>
+
+        <form id="content-form" class="space-y-4">
+          <div id="modal-fields">
+            <!-- Los campos del formulario se cargarán aquí dinámicamente -->
+          </div>
+
+          <div class="flex gap-3 pt-4">
+            <button type="submit" class="btn-primary flex-1">Guardar</button>
+            <button type="button" id="cancel-modal" class="btn-secondary flex-1">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- NOTIFICACIÓN -->
+    <div id="notification" class="notification">Operación completada</div>
+  </div>
+
+  <script>
+    // ===== SISTEMA DE ALMACENAMIENTO =====
+    async function guardarEnServidor(tipo, datos) {
+      try {
+        console.log(`💾 Guardando en MySQL - Tipo: ${tipo}, Datos:`, datos);
+
+        const response = await fetch('api/guardar.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tipo: tipo,
+            datos: datos
+          })
+        });
+
+        console.log('📡 Respuesta HTTP:', response.status, response.statusText);
+
+        if (!response.ok) {
+          throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+        }
+
+        const resultado = await response.json();
+        console.log('📊 Resultado del servidor:', resultado);
+
+        if (resultado.success) {
+          console.log('✅ Guardado exitoso en MySQL');
+          showNotification('✅ ' + (resultado.message || 'Datos guardados en MySQL'));
+          return true;
+        } else {
+          console.error('❌ Error del servidor:', resultado.error);
+          showNotification('❌ Error MySQL: ' + (resultado.error || 'Desconocido'), true);
+          return false;
+        }
+      } catch (error) {
+        console.error('🔥 Error de conexión:', error);
+        showNotification('❌ Error de conexión con el servidor: ' + error.message, true);
+        return false;
+      }
+    }
+
+    async function cargarDelServidor(tipo) {
+      try {
+        const response = await fetch(`api/cargar.php?tipo=${tipo}`);
+        if (!response.ok) {
+          throw new Error('Error en la respuesta del servidor');
+        }
+
+        const datos = await response.json();
+
+        // Si es un objeto de error
+        if (datos && datos.error) {
+          throw new Error(datos.error);
+        }
+
+        return Array.isArray(datos) ? datos : (datos ? [datos] : []);
+      } catch (error) {
+        console.error('Error cargando desde MySQL:', error);
+        showNotification('❌ Error cargando datos del servidor', true);
+        return [];
+      }
+    }
+
+    // ===== SISTEMA DE AUTENTICACIÓN =====
+    const AUTH_CONFIG = {
+      user: 'admin',
+      password: 'panda2024',
+      storageKey: 'pandaAuth'
+    };
+
+    // ===== DATOS POR DEFECTO =====
+    const DEFAULT_MIXES = [
+      { id: 1, title: "SALSA RETRO vol 1", dj: "DJ Nel PTY", genre: "Salsa", plays: 1240, downloads: 320, sizeMB: 142, duration: "58:21", url: "https://f005.backblazeb2.com/file/mixes-mp3/Salsa_Retro-By-Dj_Nelpty.mp3", tracks: ["Tema 1", "Tema 2", "Tema 3"], cover: "img/Salsa_Retro-By-Dj_Nelpty.jpg", date: "2023-10-15" }
+    ];
+
+    const DEFAULT_VIDEOS = [
+      { id: 101, title: "Kafu Banton – Pop-Up 1", dj: "Panda Truck", type: "youtube", duration: "03:20", sizeMB: 85, url: "https://www.youtube.com/watch?v=JWI2plLHavw", cover: "img/evento-poster.jpg", plays: 220, downloads: 40, date: "2023-11-10" }
+    ];
+
+    const DEFAULT_DJS = [
+      { id: 1, name: "DJ Panda", genre: "Salsa / Urbano", mixes: 5, videos: 3, city: "Ciudad de Panamá", bio: "DJ principal de Panda Truck Reloaded", avatar: "https://api.dicebear.com/7.x/identicon/svg?seed=DJ Panda", socials: "https://instagram.com/djpanda" }
+    ];
+
+    const DEFAULT_EVENTS = [
+      { id: 1, title: "Pop-Up #1 – Panda Truck Reloaded", date: "Sábado", time: "8:00 PM", place: "Ciudad de Panamá", status: "activo" }
+    ];
+
+    const DEFAULT_BANNERS = [
+      {
+        id: 1,
+        name: "Patrocinador Ejemplo",
+        image: "https://via.placeholder.com/150x60/45B7D1/white?text=Sponsor+150x60",
+        url: "#", // URL eliminada - ahora solo "#"
+        type: "sponsor",
+        size: "150x60",
+        position: 1,
+        active: true,
+        startDate: "2024-01-01",
+        endDate: "2024-12-31",
+        clicks: 0,
+        impressions: 0
+      }
+    ];
+
+    const DEFAULT_PLAYER = {
+      type: "mp4",
+      mp4Url: "https://f005.backblazeb2.com/file/Videos507/panda/EL+PANDA+TRUCK+%23wca507.mp4",
+      mp4Poster: "https://vz-82532c14-967.b-cdn.net/f0b73219-e167-4e35-a804-d3145c510518/thumbnail_9a3aa9e4.jpg",
+      youtubeId: "WVvip980HRM",
+      youtubeStart: 1810,
+      title: "Video Principal"
+    };
+
+    const DEFAULT_RADIO = {
+      url: "https://stream.zeno.fm/vjsa6jiwafavv",
+      name: "Radio Online"
+    };
+
+    const DEFAULT_CUSTOMIZATION = {
+      logoUrl: "img/logo.png",
+      logoAlt: "PANDA TRUCK RELOADED",
+      faviconUrl: "",
+      faviconEmoji: "🎧",
+      siteTitle: "Panda Truck Reloaded – Mixes, Videos y descargas",
+      siteDescription: "La casa de los DJs en Panamá. Sube tus sets, consigue audiencia real y recibe reportes semanales.",
+      footerText: "Descargas para uso personal;"
+    };
+
+    const DEFAULT_NAVIGATION = {
+      mixesLinkText: "Todos los mixes",
+      videosLinkText: "Todos los videos",
+      djProfileUrl: "dj.html?dj={nombre}"
+    };
+
+    // ===== VARIABLES GLOBALES =====
+    let MIXES = [];
+    let VIDEOS = [];
+    let DJS = [];
+    let EVENTS = [];
+    let BANNERS = [];
+    let PLAYER_CONFIG = DEFAULT_PLAYER;
+    let RADIO_CONFIG = DEFAULT_RADIO;
+    let CUSTOMIZATION = DEFAULT_CUSTOMIZATION;
+    let NAVIGATION_CONFIG = DEFAULT_NAVIGATION;
+
+    // ===== FUNCIONES PRINCIPALES =====
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    // ===== SISTEMA DE AUTENTICACIÓN =====
+    function checkAuth() {
+      const authData = localStorage.getItem(AUTH_CONFIG.storageKey);
+      if (authData) {
+        const auth = JSON.parse(authData);
+        if (auth.expires > Date.now()) {
+          showDashboard(auth.user);
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function login(username, password) {
+      if (username === AUTH_CONFIG.user && password === AUTH_CONFIG.password) {
+        const authData = {
+          user: username,
+          expires: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
+        };
+        localStorage.setItem(AUTH_CONFIG.storageKey, JSON.stringify(authData));
+        showDashboard(username);
+        showNotification('Bienvenido al dashboard');
+        return true;
+      }
+      return false;
+    }
+
+    function logout() {
+      localStorage.removeItem(AUTH_CONFIG.storageKey);
+      showLogin();
+      showNotification('Sesión cerrada correctamente');
+    }
+
+    function showLogin() {
+      $('#loginScreen').classList.remove('hidden');
+      $('#dashboard').classList.add('hidden');
+    }
+
+    async function showDashboard(username) {
+      $('#loginScreen').classList.add('hidden');
+      $('#dashboard').classList.remove('hidden');
+      $('#usernameDisplay').textContent = username;
+      await loadDashboardData();
+      updateSessionInfo();
+    }
+
+    function updateSessionInfo() {
+      const authData = localStorage.getItem(AUTH_CONFIG.storageKey);
+      if (authData) {
+        const auth = JSON.parse(authData);
+        const lastLogin = new Date(auth.expires - (24 * 60 * 60 * 1000));
+        const expires = new Date(auth.expires);
+
+        $('#lastLogin').textContent = lastLogin.toLocaleString();
+        $('#sessionExpires').textContent = expires.toLocaleString();
+      }
+    }
+
+    function showNotification(message, isError = false, duration = 3000) {
+      const notification = $("#notification");
+      notification.textContent = message;
+      notification.classList.toggle('error', isError);
+      notification.classList.add("show");
+      console.log("Notificación:", message);
+
+      setTimeout(() => {
+        notification.classList.remove("show");
+      }, duration);
+    }
+
+    // ===== FUNCIONES DEL DASHBOARD =====
+    function switchTab(tabName) {
+      $$('.tab-content').forEach(tab => tab.classList.add('hidden'));
+      $(`#${tabName}-content`).classList.remove('hidden');
+
+      $$('.nav-tab').forEach(tab => tab.classList.remove('active'));
+      $(`[data-tab="${tabName}"]`).classList.add('active');
+
+      if (tabName === 'stats') loadStats();
+      if (tabName === 'mixes') loadMixes();
+      if (tabName === 'videos') loadVideos();
+      if (tabName === 'djs') loadDJs();
+      if (tabName === 'events') loadEvents();
+      if (tabName === 'ads') loadBanners();
+      if (tabName === 'player') loadPlayerConfig();
+      if (tabName === 'customize') loadCustomization();
+      if (tabName === 'navigation') loadNavigationConfig();
+      if (tabName === 'settings') updateSessionInfo();
+    }
+
+    function loadStats() {
+      $("#stat-total-mixes").textContent = MIXES.length;
+      $("#stat-total-videos").textContent = VIDEOS.length;
+
+      const totalPlays = MIXES.reduce((sum, mix) => sum + (mix.plays || 0), 0) +
+        VIDEOS.reduce((sum, video) => sum + (video.plays || 0), 0);
+      const totalDownloads = MIXES.reduce((sum, mix) => sum + (mix.downloads || 0), 0) +
+        VIDEOS.reduce((sum, video) => sum + (video.downloads || 0), 0);
+
+      $("#stat-total-plays").textContent = totalPlays.toLocaleString();
+      $("#stat-total-downloads").textContent = totalDownloads.toLocaleString();
+
+      const topMixes = [...MIXES].sort((a, b) => (b.plays || 0) - (a.plays || 0)).slice(0, 5);
+      $("#top-mixes").innerHTML = topMixes.map(mix => `
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="font-medium">${mix.title}</div>
+            <div class="text-sm text-neutral-400">${mix.dj}</div>
+          </div>
+          <div class="text-sm text-neutral-400">${mix.plays || 0} reproducciones</div>
+        </div>
+      `).join('');
+
+      const topVideos = [...VIDEOS].sort((a, b) => (b.plays || 0) - (a.plays || 0)).slice(0, 5);
+      $("#top-videos").innerHTML = topVideos.map(video => `
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="font-medium">${video.title}</div>
+            <div class="text-sm text-neutral-400">${video.dj}</div>
+          </div>
+          <div class="text-sm text-neutral-400">${video.plays || 0} reproducciones</div>
+        </div>
+      `).join('');
+    }
+
+    function loadMixes() {
+      const tableBody = $("#mixes-table");
+      tableBody.innerHTML = MIXES.map(mix => `
+        <tr class="table-row">
+          <td class="p-4">${mix.title}</td>
+          <td class="p-4">${mix.dj}</td>
+          <td class="p-4">${mix.genre}</td>
+          <td class="p-4">${mix.plays || 0}</td>
+          <td class="p-4">${mix.downloads || 0}</td>
+          <td class="p-4">
+            <button class="edit-item mr-2 text-blue-400 hover:text-blue-300" data-type="mix" data-id="${mix.id}">Editar</button>
+            <button class="delete-item text-red-400 hover:text-red-300" data-type="mix" data-id="${mix.id}">Eliminar</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function loadVideos() {
+      const tableBody = $("#videos-table");
+      tableBody.innerHTML = VIDEOS.map(video => `
+        <tr class="table-row">
+          <td class="p-4">${video.title}</td>
+          <td class="p-4">${video.dj}</td>
+          <td class="p-4">${video.type}</td>
+          <td class="p-4">${video.plays || 0}</td>
+          <td class="p-4">${video.downloads || 0}</td>
+          <td class="p-4">
+            <button class="edit-item mr-2 text-blue-400 hover:text-blue-300" data-type="video" data-id="${video.id}">Editar</button>
+            <button class="delete-item text-red-400 hover:text-red-300" data-type="video" data-id="${video.id}">Eliminar</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function loadDJs() {
+      const djsGrid = $("#djs-grid");
+      djsGrid.innerHTML = DJS.map(dj => `
+        <div class="content-card p-5">
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <h3 class="font-semibold text-lg">${dj.name}</h3>
+              <p class="text-neutral-400">${dj.genre}</p>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center">
+              <img src="${dj.avatar || 'https://api.dicebear.com/7.x/identicon/svg?seed=' + dj.name}" alt="${dj.name}" class="w-full h-full rounded-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+              <span class="hidden">🎧</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <div class="bg-neutral-800 rounded-lg p-2 text-center">
+              <div class="font-bold">${dj.mixes || 0}</div>
+              <div class="text-xs text-neutral-400">Mixes</div>
+            </div>
+            <div class="bg-neutral-800 rounded-lg p-2 text-center">
+              <div class="font-bold">${dj.videos || 0}</div>
+              <div class="text-xs text-neutral-400">Videos</div>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button class="edit-item flex-1 btn-secondary py-2 text-sm" data-type="dj" data-id="${dj.id}">Editar</button>
+            <button class="delete-item flex-1 bg-neutral-800 hover:bg-neutral-700 rounded-lg py-2 text-sm text-red-400" data-type="dj" data-id="${dj.id}">Eliminar</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function loadEvents() {
+      const eventsGrid = $("#events-grid");
+      eventsGrid.innerHTML = EVENTS.map(event => `
+        <div class="content-card p-5">
+          <div class="flex justify-between items-start mb-3">
+            <h3 class="font-semibold">${event.title}</h3>
+            <span class="text-xs px-2 py-1 rounded-full ${event.status === 'activo' ? 'bg-green-900 text-green-300' : 'bg-neutral-800 text-neutral-400'}">${event.status}</span>
+          </div>
+          <div class="space-y-2 text-sm mb-4">
+            <div class="flex items-center">
+              <span class="mr-2">📅</span>
+              <span>${event.date}</span>
+            </div>
+            <div class="flex items-center">
+              <span class="mr-2">⏰</span>
+              <span>${event.time}</span>
+            </div>
+            <div class="flex items-center">
+              <span class="mr-2">📍</span>
+              <span>${event.place}</span>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button class="edit-item flex-1 btn-secondary py-2 text-sm" data-type="event" data-id="${event.id}">Editar</button>
+            <button class="delete-item flex-1 bg-neutral-800 hover:bg-neutral-700 rounded-lg py-2 text-sm text-red-400" data-type="event" data-id="${event.id}">Eliminar</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ===== GESTIÓN DE BANNERS - ACTUALIZADO SIN URL DE DESTINO =====
+    function loadBanners() {
+      const today = new Date().toISOString().split('T')[0];
+
+      // Actualizar estadísticas
+      const activeBanners = BANNERS.filter(banner =>
+        banner.active &&
+        (!banner.startDate || banner.startDate <= today) &&
+        (!banner.endDate || banner.endDate >= today)
+      );
+
+      const totalImpressions = BANNERS.reduce((sum, banner) => sum + (banner.impressions || 0), 0);
+      const totalClicks = BANNERS.reduce((sum, banner) => sum + (banner.clicks || 0), 0);
+      const ctr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : 0;
+
+      $("#stat-total-banners").textContent = activeBanners.length;
+      $("#stat-total-impressions").textContent = totalImpressions.toLocaleString();
+      $("#stat-total-clicks").textContent = totalClicks.toLocaleString();
+      $("#stat-ctr").textContent = ctr + '%';
+
+      // Aplicar filtros
+      const typeFilter = $("#filter-banner-type").value;
+      const statusFilter = $("#filter-banner-status").value;
+      const searchFilter = $("#search-banners").value.toLowerCase();
+
+      let filteredBanners = BANNERS;
+
+      if (typeFilter) {
+        filteredBanners = filteredBanners.filter(banner => banner.type === typeFilter);
+      }
+
+      if (statusFilter) {
+        filteredBanners = filteredBanners.filter(banner => {
+          const isActive = banner.active &&
+            (!banner.startDate || banner.startDate <= today) &&
+            (!banner.endDate || banner.endDate >= today);
+
+          const isExpired = banner.endDate && banner.endDate < today;
+          const isScheduled = banner.startDate && banner.startDate > today;
+
+          if (statusFilter === 'active') return isActive;
+          if (statusFilter === 'expired') return isExpired;
+          if (statusFilter === 'scheduled') return isScheduled;
+          return true;
+        });
+      }
+
+      if (searchFilter) {
+        filteredBanners = filteredBanners.filter(banner =>
+          banner.name.toLowerCase().includes(searchFilter)
+        );
+      }
+
+      // Renderizar tabla
+      const tableBody = $("#banners-table");
+      tableBody.innerHTML = filteredBanners.map(banner => {
+        const isActive = banner.active &&
+          (!banner.startDate || banner.startDate <= today) &&
+          (!banner.endDate || banner.endDate >= today);
+        const isExpired = banner.endDate && banner.endDate < today;
+        const isScheduled = banner.startDate && banner.startDate > today;
+
+        let status = 'active';
+        let statusText = 'Activo';
+        let statusClass = 'status-active';
+
+        if (isExpired) {
+          status = 'expired';
+          statusText = 'Expirado';
+          statusClass = 'status-expired';
+        } else if (isScheduled) {
+          status = 'scheduled';
+          statusText = 'Programado';
+          statusClass = 'status-scheduled';
+        } else if (!banner.active) {
+          status = 'inactive';
+          statusText = 'Inactivo';
+          statusClass = 'status-expired';
+        }
+
+        const ctr = banner.impressions > 0 ? ((banner.clicks / banner.impressions) * 100).toFixed(2) : 0;
+
+        return `
+          <tr class="table-row">
+            <td class="p-4">
+              <div class="banner-preview">
+                <img src="${banner.image}" alt="${banner.name}" 
+                     onerror="this.src='data:image/svg+xml;charset=utf-8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%22150%22 height%3D%2260%22 viewBox%3D%220 0 150 60%22%3E%3Crect fill%3D%22%23333%22 width%3D%22150%22 height%3D%2260%22%2F%3E%3Ctext fill%3D%22%23fff%22 font-family%3D%22Arial%22 font-size%3D%2212%22 x%3D%2250%25%22 y%3D%2250%25%22 text-anchor%3D%22middle%22 dy%3D%22.3em%22%3E${banner.name}%3C%2Ftext%3E%3C%2Fsvg%3E'">
+              </div>
+            </td>
+            <td class="p-4">
+              <div class="font-medium">${banner.name}</div>
+              <div class="text-sm text-neutral-400">${banner.size}</div>
+            </td>
+            <td class="p-4">
+              <span class="capitalize">${banner.type}</span>
+              <div class="text-sm text-neutral-400">Posición: ${banner.position}</div>
+            </td>
+            <td class="p-4">
+              <div class="text-sm">
+                ${banner.startDate ? `Inicio: ${banner.startDate}<br>` : ''}
+                ${banner.endDate ? `Fin: ${banner.endDate}` : 'Sin fecha fin'}
+              </div>
+            </td>
+            <td class="p-4">
+              <div class="text-sm">
+                <div>Impresiones: ${banner.impressions || 0}</div>
+                <div>Clicks: ${banner.clicks || 0}</div>
+                <div>CTR: ${ctr}%</div>
+              </div>
+            </td>
+            <td class="p-4">
+              <span class="status-badge ${statusClass}">${statusText}</span>
+            </td>
+            <td class="p-4">
+              <button class="edit-item mr-2 text-blue-400 hover:text-blue-300" data-type="banner" data-id="${banner.id}">Editar</button>
+              <button class="delete-item text-red-400 hover:text-red-300" data-type="banner" data-id="${banner.id}">Eliminar</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function loadPlayerConfig() {
+      const form = $("#player-form");
+      form.querySelector('[name="playerType"]').value = PLAYER_CONFIG.type || "mp4";
+      form.querySelector('[name="mp4Url"]').value = PLAYER_CONFIG.mp4Url || "";
+      form.querySelector('[name="mp4Poster"]').value = PLAYER_CONFIG.mp4Poster || "";
+      form.querySelector('[name="youtubeId"]').value = PLAYER_CONFIG.youtubeId || "";
+      form.querySelector('[name="youtubeStart"]').value = PLAYER_CONFIG.youtubeStart || "";
+      form.querySelector('[name="playerTitle"]').value = PLAYER_CONFIG.title || "";
+
+      togglePlayerFields();
+    }
+
+    function loadCustomization() {
+      const logoForm = $("#logo-form");
+      logoForm.querySelector('[name="logoUrl"]').value = CUSTOMIZATION.logoUrl || "";
+      logoForm.querySelector('[name="logoAlt"]').value = CUSTOMIZATION.logoAlt || "";
+
+      const faviconForm = $("#favicon-form");
+      faviconForm.querySelector('[name="faviconUrl"]').value = CUSTOMIZATION.faviconUrl || "";
+      faviconForm.querySelector('[name="faviconEmoji"]').value = CUSTOMIZATION.faviconEmoji || "";
+
+      const infoForm = $("#info-form");
+      infoForm.querySelector('[name="siteTitle"]').value = CUSTOMIZATION.siteTitle || "";
+      infoForm.querySelector('[name="siteDescription"]').value = CUSTOMIZATION.siteDescription || "";
+      infoForm.querySelector('[name="footerText"]').value = CUSTOMIZATION.footerText || "";
+    }
+
+    function loadNavigationConfig() {
+      const form = $("#navigation-form");
+      form.querySelector('[name="mixesLinkText"]').value = NAVIGATION_CONFIG.mixesLinkText || "";
+      form.querySelector('[name="videosLinkText"]').value = NAVIGATION_CONFIG.videosLinkText || "";
+      form.querySelector('[name="djProfileUrl"]').value = NAVIGATION_CONFIG.djProfileUrl || "";
+    }
+
+    function togglePlayerFields() {
+      const type = $("#playerType").value;
+      if (type === "mp4") {
+        $("#mp4-fields").classList.remove("hidden");
+        $("#youtube-fields").classList.add("hidden");
+      } else {
+        $("#mp4-fields").classList.add("hidden");
+        $("#youtube-fields").classList.remove("hidden");
+      }
+    }
+
+    // ===== FUNCIONES PARA MODALES =====
+    function openModal(type, id = null) {
+      const modal = $("#content-modal");
+      const title = $("#modal-title");
+      const fields = $("#modal-fields");
+      const form = $("#content-form");
+
+      let formHTML = '';
+      let itemData = null;
+
+      if (id) {
+        // Modo edición
+        if (type === 'mix') itemData = MIXES.find(m => m.id === id);
+        if (type === 'video') itemData = VIDEOS.find(v => v.id === id);
+        if (type === 'dj') itemData = DJS.find(d => d.id === id);
+        if (type === 'event') itemData = EVENTS.find(e => e.id === id);
+        if (type === 'banner') itemData = BANNERS.find(b => b.id === id);
+      }
+
+      if (type === 'mix') {
+        title.textContent = id ? 'Editar Mix' : 'Añadir Mix';
+        formHTML = `
+          <div>
+            <label class="block text-sm font-medium mb-2">Título</label>
+            <input type="text" class="form-input w-full" name="title" value="${itemData ? itemData.title : ''}" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">DJ</label>
+            <input type="text" class="form-input w-full" name="dj" value="${itemData ? itemData.dj : ''}" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Género</label>
+            <select class="form-input w-full" name="genre" required>
+              <option value="Salsa" ${itemData && itemData.genre === 'Salsa' ? 'selected' : ''}>Salsa</option>
+              <option value="Tìpico" ${itemData && itemData.genre === 'Tìpico' ? 'selected' : ''}>Tìpico</option>
+              <option value="Afrobeat" ${itemData && itemData.genre === 'Afrobeat' ? 'selected' : ''}>Afrobeat</option>
+              <option value="Dancehall" ${itemData && itemData.genre === 'Dancehall' ? 'selected' : ''}>Dancehall</option>
+              <option value="Pop" ${itemData && itemData.genre === 'Pop' ? 'selected' : ''}>Pop</option>
+              <option value="Plena Retro" ${itemData && itemData.genre === 'Plena Retro' ? 'selected' : ''}>Plena Retro</option>
+              <option value="Rock" ${itemData && itemData.genre === 'Rock' ? 'selected' : ''}>Rock</option>
+              <option value="Afro House" ${itemData && itemData.genre === 'Afro House' ? 'selected' : ''}>Afro House</option>
+              <option value="Electrónica" ${itemData && itemData.genre === 'Electrónica' ? 'selected' : ''}>Electrónica</option>
+              <option value="Reggaetón" ${itemData && itemData.genre === 'Reggaetón' ? 'selected' : ''}>Reggaetón</option>
+              <option value="Urbano" ${itemData && itemData.genre === 'Urbano' ? 'selected' : ''}>Urbano</option>
+              <option value="Merengue" ${itemData && itemData.genre === 'Merengue' ? 'selected' : ''}>Merengue</option>
+              <option value="Bachata" ${itemData && itemData.genre === 'Bachata' ? 'selected' : ''}>Bachata</option>
+              <option value="Reggae" ${itemData && itemData.genre === 'Reggae' ? 'selected' : ''}>Reggae</option>
+              <option value="Dembow" ${itemData && itemData.genre === 'Dembow' ? 'selected' : ''}>Dembow</option>
+              <option value="Hip Hop" ${itemData && itemData.genre === 'Hip Hop' ? 'selected' : ''}>Hip Hop</option>
+              <option value="Haitiano" ${itemData && itemData.genre === 'Haitiano' ? 'selected' : ''}>Haitiano</option>
+              <option value="Sound Car" ${itemData && itemData.genre === 'Sound Car' ? 'selected' : ''}>Sound Car</option>
+              <option value="Variado-mix" ${itemData && itemData.genre === 'Variado-mix' ? 'selected' : ''}>Variado-mix</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">URL del Mix</label>
+            <input type="url" class="form-input w-full" name="url" value="${itemData ? itemData.url : ''}" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">URL de la Portada</label>
+            <input type="url" class="form-input w-full" name="cover" value="${itemData ? itemData.cover : ''}" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Duración (mm:ss)</label>
+            <input type="text" class="form-input w-full" name="duration" value="${itemData ? itemData.duration : ''}" placeholder="58:21" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Tamaño (MB)</label>
+            <input type="number" class="form-input w-full" name="sizeMB" value="${itemData ? itemData.sizeMB : ''}" placeholder="142" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Fecha (YYYY-MM-DD)</label>
+            <input type="date" class="form-input w-full" name="date" value="${itemData ? itemData.date : ''}" required>
+          </div>
+        `;
+      } else if (type === 'video') {
+        title.textContent = id ? 'Editar Video' : 'Añadir Video';
+        formHTML = `
+          <div>
+            <label class="block text-sm font-medium mb-2">Título</label>
+            <input type="text" class="form-input w-full" name="title" value="${itemData ? itemData.title : ''}" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">DJ/Creador</label>
+            <input type="text" class="form-input w-full" name="dj" value="${itemData ? itemData.dj : ''}" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Tipo</label>
+            <select class="form-input w-full" name="type" required>
+              <option value="mp4" ${itemData && itemData.type === 'mp4' ? 'selected' : ''}>MP4</option>
+              <option value="youtube" ${itemData && itemData.type === 'youtube' ? 'selected' : ''}>YouTube</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">URL del Video</label>
+            <input type="url" class="form-input w-full" name="url" value="${itemData ? itemData.url : ''}" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">URL de la Portada</label>
+            <input type="url" class="form-input w-full" name="cover" value="${itemData ? itemData.cover : ''}" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Duración (mm:ss)</label>
+            <input type="text" class="form-input w-full" name="duration" value="${itemData ? itemData.duration : ''}" placeholder="03:20" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Tamaño (MB)</label>
+            <input type="number" class="form-input w-full" name="sizeMB" value="${itemData ? itemData.sizeMB : ''}" placeholder="85" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Fecha (YYYY-MM-DD)</label>
+            <input type="date" class="form-input w-full" name="date" value="${itemData ? itemData.date : ''}" required>
+          </div>
+        `;
+      } else if (type === 'dj') {
+        title.textContent = id ? 'Editar DJ' : 'Añadir DJ';
+        formHTML = `
+          <div>
+            <label class="block text-sm font-medium mb-2">Nombre</label>
+            <input type="text" class="form-input w-full" name="name" value="${itemData ? itemData.name : ''}" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Género</label>
+            <input type="text" class="form-input w-full" name="genre" value="${itemData ? itemData.genre : ''}" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Ciudad</label>
+            <input type="text" class="form-input w-full" name="city" value="${itemData ? itemData.city : ''}">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Biografía</label>
+            <textarea class="form-input w-full" name="bio" rows="3">${itemData ? itemData.bio : ''}</textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">URL del Avatar</label>
+            <input type="url" class="form-input w-full" name="avatar" value="${itemData ? itemData.avatar : ''}">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Redes Sociales (separadas por coma)</label>
+            <input type="text" class="form-input w-full" name="socials" value="${itemData ? itemData.socials : ''}" placeholder="https://instagram.com/usuario, https://twitter.com/usuario">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Número de Mixes</label>
+            <input type="number" class="form-input w-full" name="mixes" value="${itemData ? itemData.mixes : 0}" min="0" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Número de Videos</label>
+            <input type="number" class="form-input w-full" name="videos" value="${itemData ? itemData.videos : 0}" min="0" required>
+          </div>
+        `;
+      } else if (type === 'event') {
+        title.textContent = id ? 'Editar Evento' : 'Añadir Evento';
+        formHTML = `
+          <div>
+            <label class="block text-sm font-medium mb-2">Título</label>
+            <input type="text" class="form-input w-full" name="title" value="${itemData ? itemData.title : ''}" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Día</label>
+            <input type="text" class="form-input w-full" name="date" value="${itemData ? itemData.date : ''}" placeholder="Sábado" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Hora</label>
+            <input type="text" class="form-input w-full" name="time" value="${itemData ? itemData.time : ''}" placeholder="8:00 PM" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Lugar</label>
+            <input type="text" class="form-input w-full" name="place" value="${itemData ? itemData.place : ''}" placeholder="Ciudad de Panamá" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Estado</label>
+            <select class="form-input w-full" name="status" required>
+              <option value="activo" ${itemData && itemData.status === 'activo' ? 'selected' : ''}>Activo</option>
+              <option value="inactivo" ${itemData && itemData.status === 'inactivo' ? 'selected' : ''}>Inactivo</option>
+            </select>
+          </div>
+        `;
+      } else if (type === 'banner') {
+        title.textContent = id ? 'Editar Banner' : 'Añadir Banner';
+        formHTML = `
+          <div>
+            <label class="block text-sm font-medium mb-2">Nombre del Banner*</label>
+            <input type="text" class="form-input w-full" name="name" value="${itemData ? itemData.name : ''}" required placeholder="Ej: Banner Principal Sidebar">
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium mb-2">Tipo de Banner*</label>
+            <select class="form-input w-full" name="type" required id="banner-type-select">
+              <option value="">Selecciona un tipo</option>
+              <option value="sponsor" ${itemData && itemData.type === 'sponsor' ? 'selected' : ''}>Patrocinador (150x60px)</option>
+            </select>
+            <div class="text-xs text-neutral-400 mt-1" id="size-info">
+              ${itemData ? `Tamaño recomendado: ${itemData.size}` : 'Selecciona un tipo para ver el tamaño'}
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium mb-2">URL de la Imagen*</label>
+            <input type="url" class="form-input w-full" name="image" value="${itemData ? itemData.image : ''}" required placeholder="https://ejemplo.com/banner.jpg">
+            <div class="text-xs text-neutral-400 mt-1">Asegúrate que la imagen tenga el tamaño correcto</div>
+          </div>
+          
+          <!-- CAMPO URL ELIMINADO - YA NO EXISTE -->
+          
+          <div>
+            <label class="block text-sm font-medium mb-2">Posición*</label>
+            <input type="number" class="form-input w-full" name="position" value="${itemData ? itemData.position : 1}" min="1" max="10" required>
+            <div class="text-xs text-neutral-400 mt-1">1 = Más arriba, 10 = Más abajo</div>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-2">Fecha de Inicio</label>
+              <input type="date" class="form-input w-full" name="startDate" value="${itemData ? itemData.startDate : ''}">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-2">Fecha de Fin</label>
+              <input type="date" class="form-input w-full" name="endDate" value="${itemData ? itemData.endDate : ''}">
+            </div>
+          </div>
+          
+          <div>
+            <label class="flex items-center">
+              <input type="checkbox" class="mr-2" name="active" ${itemData ? (itemData.active ? 'checked' : '') : 'checked'}>
+              <span class="text-sm font-medium">Banner activo</span>
+            </label>
+          </div>
+          
+          ${itemData ? `
+            <div class="bg-neutral-800 rounded-lg p-4 mt-4">
+              <h4 class="font-semibold mb-2">Estadísticas</h4>
+              <div class="grid grid-cols-2 gap-2 text-sm">
+                <div>Impresiones: ${itemData.impressions || 0}</div>
+                <div>Clicks: ${itemData.clicks || 0}</div>
+                <div>CTR: ${itemData.impressions > 0 ? ((itemData.clicks / itemData.impressions) * 100).toFixed(2) : 0}%</div>
+              </div>
+            </div>
+          ` : ''}
+        `;
+      }
+
+      fields.innerHTML = formHTML;
+      form.dataset.type = type;
+      form.dataset.id = id || '';
+
+      // Configurar el evento para actualizar el tamaño del banner
+      const bannerTypeSelect = document.getElementById('banner-type-select');
+      if (bannerTypeSelect) {
+        bannerTypeSelect.addEventListener('change', updateBannerSizeInfo);
+      }
+
+      modal.style.display = 'flex';
+    }
+
+    // Función para actualizar la información del tamaño del banner
+    function updateBannerSizeInfo() {
+      const select = document.getElementById('banner-type-select');
+      const sizeInfo = document.getElementById('size-info');
+
+      if (select && sizeInfo) {
+        const sizes = {
+          'sidebar': '300x250px',
+          'horizontal': '728x90px',
+          'sponsor': '150x60px'
+        };
+
+        sizeInfo.textContent = `Tamaño recomendado: ${sizes[select.value] || 'Selecciona un tipo'}`;
+      }
+    }
+
+    function closeModal() {
+      $("#content-modal").style.display = 'none';
+    }
+
+    async function saveItem(e) {
+      e.preventDefault();
+      const form = e.target;
+      const type = form.dataset.type;
+      const id = form.dataset.id ? parseInt(form.dataset.id) : null;
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      let success = false;
+
+      if (type === 'mix') {
+        if (id) {
+          // Editar mix existente
+          const index = MIXES.findIndex(m => m.id === id);
+          if (index !== -1) {
+            MIXES[index] = { ...MIXES[index], ...data, plays: parseInt(MIXES[index].plays || 0), downloads: parseInt(MIXES[index].downloads || 0) };
+          }
+        } else {
+          // Añadir nuevo mix
+          const newId = MIXES.length > 0 ? Math.max(...MIXES.map(m => m.id)) + 1 : 1;
+          MIXES.push({
+            id: newId,
+            title: data.title,
+            dj: data.dj,
+            genre: data.genre,
+            url: data.url,
+            cover: data.cover,
+            duration: data.duration,
+            sizeMB: parseInt(data.sizeMB),
+            date: data.date,
+            plays: 0,
+            downloads: 0,
+            tracks: []
+          });
+        }
+        success = await guardarEnServidor('mixes', MIXES);
+        if (success) {
+          loadMixes();
+          syncDataToIndex();
+          showNotification(`Mix ${id ? 'actualizado' : 'añadido'} correctamente`);
+        }
+      } else if (type === 'video') {
+        if (id) {
+          // Editar video existente
+          const index = VIDEOS.findIndex(v => v.id === id);
+          if (index !== -1) {
+            VIDEOS[index] = { ...VIDEOS[index], ...data, plays: parseInt(VIDEOS[index].plays || 0), downloads: parseInt(VIDEOS[index].downloads || 0) };
+          }
+        } else {
+          // Añadir nuevo video
+          const newId = VIDEOS.length > 0 ? Math.max(...VIDEOS.map(v => v.id)) + 1 : 101;
+          VIDEOS.push({
+            id: newId,
+            title: data.title,
+            dj: data.dj,
+            type: data.type,
+            url: data.url,
+            cover: data.cover,
+            duration: data.duration,
+            sizeMB: parseInt(data.sizeMB),
+            date: data.date,
+            plays: 0,
+            downloads: 0
+          });
+        }
+        success = await guardarEnServidor('videos', VIDEOS);
+        if (success) {
+          loadVideos();
+          syncDataToIndex();
+          showNotification(`Video ${id ? 'actualizado' : 'añadido'} correctamente`);
+        }
+      } else if (type === 'dj') {
+        if (id) {
+          // Editar DJ existente
+          const index = DJS.findIndex(d => d.id === id);
+          if (index !== -1) {
+            DJS[index] = { ...DJS[index], ...data, mixes: parseInt(data.mixes), videos: parseInt(data.videos) };
+          }
+        } else {
+          // Añadir nuevo DJ
+          const newId = DJS.length > 0 ? Math.max(...DJS.map(d => d.id)) + 1 : 1;
+          DJS.push({
+            id: newId,
+            name: data.name,
+            genre: data.genre,
+            city: data.city,
+            bio: data.bio,
+            avatar: data.avatar,
+            socials: data.socials,
+            mixes: parseInt(data.mixes),
+            videos: parseInt(data.videos)
+          });
+        }
+        success = await guardarEnServidor('djs', DJS);
+        if (success) {
+          loadDJs();
+          syncDataToIndex();
+          showNotification(`DJ ${id ? 'actualizado' : 'añadido'} correctamente`);
+        }
+      } else if (type === 'event') {
+        if (id) {
+          // Editar evento existente
+          const index = EVENTS.findIndex(e => e.id === id);
+          if (index !== -1) {
+            EVENTS[index] = { ...EVENTS[index], ...data };
+          }
+        } else {
+          // Añadir nuevo evento
+          const newId = EVENTS.length > 0 ? Math.max(...EVENTS.map(e => e.id)) + 1 : 1;
+          EVENTS.push({
+            id: newId,
+            title: data.title,
+            date: data.date,
+            time: data.time,
+            place: data.place,
+            status: data.status
+          });
+        }
+        success = await guardarEnServidor('events', EVENTS);
+        if (success) {
+          loadEvents();
+          syncDataToIndex();
+          showNotification(`Evento ${id ? 'actualizado' : 'añadido'} correctamente`);
+        }
+      } else if (type === 'banner') {
+        if (id) {
+          // Editar banner existente
+          const index = BANNERS.findIndex(b => b.id === id);
+          if (index !== -1) {
+            BANNERS[index] = {
+              ...BANNERS[index],
+              name: data.name,
+              type: data.type,
+              image: data.image,
+              url: "#", // URL FIJA - SIN ENLACE EXTERNO
+              size: data.type === 'sidebar' ? '300x250' :
+                data.type === 'horizontal' ? '728x90' :
+                  '150x60',
+              position: parseInt(data.position),
+              active: data.active === 'on',
+              startDate: data.startDate || null,
+              endDate: data.endDate || null
+            };
+          }
+        } else {
+          // Añadir nuevo banner
+          const newId = BANNERS.length > 0 ? Math.max(...BANNERS.map(b => b.id)) + 1 : 1;
+          BANNERS.push({
+            id: newId,
+            name: data.name,
+            type: data.type,
+            image: data.image,
+            url: "#", // URL FIJA - SIN ENLACE EXTERNO
+            size: data.type === 'sidebar' ? '300x250' :
+              data.type === 'horizontal' ? '728x90' :
+                '150x60',
+            position: parseInt(data.position),
+            active: data.active === 'on',
+            startDate: data.startDate || null,
+            endDate: data.endDate || null,
+            clicks: 0,
+            impressions: 0
+          });
+        }
+        success = await guardarEnServidor('banners', BANNERS);
+        if (success) {
+          loadBanners();
+          syncBannersToIndex();
+          showNotification(`Banner ${id ? 'actualizado' : 'añadido'} correctamente`);
+        }
+      }
+
+      if (success) {
+        closeModal();
+        loadStats(); // Actualizar estadísticas
+      }
+    }
+
+    // ===== FUNCIÓN DELETEITEM =====
+    async function deleteItem(type, id) {
+      if (!confirm(`¿Estás seguro de que deseas eliminar este ${type}?`)) return;
+
+      console.log(`🗑️ Eliminando ${type} ID:`, id);
+      let success = false;
+
+      try {
+        if (type === 'mix') {
+          MIXES = MIXES.filter(m => m.id !== id);
+          success = await guardarEnServidor('mixes', MIXES);
+          if (success) {
+            loadMixes();
+            syncDataToIndex();
+            loadStats();
+            showNotification('Mix eliminado correctamente');
+          }
+        } else if (type === 'video') {
+          VIDEOS = VIDEOS.filter(v => v.id !== id);
+          success = await guardarEnServidor('videos', VIDEOS);
+          if (success) {
+            loadVideos();
+            syncDataToIndex();
+            loadStats();
+            showNotification('Video eliminado correctamente');
+          }
+        } else if (type === 'dj') {
+          DJS = DJS.filter(d => d.id !== id);
+          success = await guardarEnServidor('djs', DJS);
+          if (success) {
+            loadDJs();
+            syncDataToIndex();
+            showNotification('DJ eliminado correctamente');
+          }
+        } else if (type === 'event') {
+          EVENTS = EVENTS.filter(e => e.id !== id);
+          success = await guardarEnServidor('events', EVENTS);
+          if (success) {
+            loadEvents();
+            syncDataToIndex();
+            showNotification('Evento eliminado correctamente');
+          }
+        } else if (type === 'banner') {
+          console.log('🗑️ Eliminando banner ID:', id);
+          console.log('Banners ANTES:', BANNERS.length);
+
+          // 1. Filtrar del array local
+          BANNERS = BANNERS.filter(b => b.id !== id);
+          console.log('Banners DESPUÉS:', BANNERS.length);
+
+          // 2. Guardar en MySQL
+          success = await guardarEnServidor('banners', BANNERS);
+
+          if (success) {
+            // 3. Actualizar interfaz
+            loadBanners();
+            // 4. Sincronizar con el sitio principal
+            syncBannersToIndex();
+            showNotification('✅ Banner eliminado correctamente de la base de datos');
+          } else {
+            // Si falla el guardado, recargar datos desde servidor
+            console.error('❌ Falló el guardado en MySQL, recargando datos...');
+            await loadDashboardData();
+            showNotification('❌ Error al eliminar el banner de la base de datos', true);
+          }
+        }
+      } catch (error) {
+        console.error('Error en deleteItem:', error);
+        showNotification('❌ Error al eliminar: ' + error.message, true);
+      }
+    }
+
+    // ===== FUNCIONES DE CONFIGURACIÓN =====
+    async function savePlayerConfig(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+
+      PLAYER_CONFIG = {
+        type: data.playerType,
+        mp4Url: data.mp4Url,
+        mp4Poster: data.mp4Poster,
+        youtubeId: data.youtubeId,
+        youtubeStart: parseInt(data.youtubeStart) || 0,
+        title: data.playerTitle
+      };
+
+      const success = await guardarEnServidor('player', PLAYER_CONFIG);
+      if (success) {
+        syncDataToIndex();
+        showNotification('Configuración del reproductor guardada');
+      }
+    }
+
+    async function saveRadioConfig(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+
+      RADIO_CONFIG = {
+        url: data.radioUrl,
+        name: data.radioName
+      };
+
+      const success = await guardarEnServidor('radio', RADIO_CONFIG);
+      if (success) {
+        syncDataToIndex();
+        showNotification('Configuración de radio guardada');
+      }
+    }
+
+    async function saveLogoConfig(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+
+      CUSTOMIZATION.logoUrl = data.logoUrl;
+      CUSTOMIZATION.logoAlt = data.logoAlt;
+
+      const success = await guardarEnServidor('customization', CUSTOMIZATION);
+      if (success) {
+        syncDataToIndex();
+
+        // Actualizar logo en tiempo real
+        const logoImg = $("#current-logo");
+        logoImg.src = data.logoUrl;
+        logoImg.alt = data.logoAlt;
+
+        showNotification('Configuración del logo guardada');
+      }
+    }
+
+    async function saveFaviconConfig(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+
+      CUSTOMIZATION.faviconUrl = data.faviconUrl;
+      CUSTOMIZATION.faviconEmoji = data.faviconEmoji;
+
+      const success = await guardarEnServidor('customization', CUSTOMIZATION);
+      if (success) {
+        syncDataToIndex();
+        showNotification('Configuración del favicon guardada');
+      }
+    }
+
+    async function saveInfoConfig(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+
+      CUSTOMIZATION.siteTitle = data.siteTitle;
+      CUSTOMIZATION.siteDescription = data.siteDescription;
+      CUSTOMIZATION.footerText = data.footerText;
+
+      const success = await guardarEnServidor('customization', CUSTOMIZATION);
+      if (success) {
+        syncDataToIndex();
+        showNotification('Información general guardada');
+      }
+    }
+
+    async function saveNavigationConfig(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+
+      NAVIGATION_CONFIG = {
+        mixesLinkText: data.mixesLinkText,
+        videosLinkText: data.videosLinkText,
+        djProfileUrl: data.djProfileUrl
+      };
+
+      const success = await guardarEnServidor('navigation', NAVIGATION_CONFIG);
+      if (success) {
+        syncDataToIndex();
+        showNotification('Configuración de navegación guardada');
+      }
+    }
+
+    function saveSettingsConfig(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+
+      if (data.adminPassword && data.adminPassword !== data.adminPasswordConfirm) {
+        showNotification('Las contraseñas no coinciden', true, 5000);
+        return;
+      }
+
+      if (data.adminPassword) {
+        AUTH_CONFIG.password = data.adminPassword;
+        showNotification('Credenciales actualizadas correctamente');
+      } else {
+        showNotification('Configuración guardada');
+      }
+    }
+
+    // ===== SISTEMA DE SINCRONIZACIÓN =====
+    function syncDataToIndex() {
+      const indexData = {
+        mixes: MIXES,
+        videos: VIDEOS,
+        djs: DJS,
+        events: EVENTS,
+        player: PLAYER_CONFIG,
+        radio: RADIO_CONFIG,
+        customization: CUSTOMIZATION,
+        navigation: NAVIGATION_CONFIG,
+        lastSync: Date.now()
+      };
+
+      try {
+        localStorage.setItem('pandaIndexData', JSON.stringify(indexData));
+        showNotification('Datos sincronizados con el sitio principal');
+        return true;
+      } catch (e) {
+        console.error('Error syncing data:', e);
+        showNotification('Error al sincronizar datos', true, 5000);
+        return false;
+      }
+    }
+
+    function syncBannersToIndex() {
+      try {
+        localStorage.setItem('pandaBanners:v1', JSON.stringify(BANNERS));
+        showNotification('Banners sincronizados con el sitio principal');
+        return true;
+      } catch (e) {
+        console.error('Error syncing banners:', e);
+        showNotification('Error al sincronizar banners', true, 5000);
+        return false;
+      }
+    }
+
+    // ===== INICIALIZACIÓN =====
+    async function init() {
+      console.log('🚀 Iniciando dashboard...');
+
+      try {
+        // Verificar autenticación
+        const isAuthenticated = checkAuth();
+        console.log('🔐 Autenticado:', isAuthenticated);
+
+        if (!isAuthenticated) {
+          showLogin();
+        } else {
+          await showDashboard('Admin');
+        }
+
+        // Configurar evento de login
+        const loginForm = $("#loginForm");
+        if (loginForm) {
+          loginForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            console.log('📝 Formulario de login enviado');
+
+            const username = this.querySelector('input[type="text"]').value;
+            const password = this.querySelector('input[type="password"]').value;
+
+            console.log('👤 Usuario:', username);
+
+            if (!login(username, password)) {
+              showNotification('Usuario o contraseña incorrectos', true, 5000);
+            }
+          });
+        }
+
+        // Configurar logout
+        const logoutBtn = $("#logoutBtn");
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+              logout();
+            }
+          });
+        }
+
+        // Configurar navegación por pestañas
+        $$('.nav-tab').forEach(tab => {
+          tab.addEventListener('click', function () {
+            console.log('🔖 Cambiando pestaña:', this.dataset.tab);
+            switchTab(this.dataset.tab);
+          });
+        });
+
+        // Configurar modales
+        $("#close-modal").addEventListener('click', closeModal);
+        $("#cancel-modal").addEventListener('click', closeModal);
+        $("#content-form").addEventListener('submit', saveItem);
+
+        // Configurar botones de añadir
+        const addButtons = [
+          { id: 'add-mix-btn', type: 'mix' },
+          { id: 'add-video-btn', type: 'video' },
+          { id: 'add-dj-btn', type: 'dj' },
+          { id: 'add-event-btn', type: 'event' },
+          { id: 'add-banner-btn', type: 'banner' }
+        ];
+
+        addButtons.forEach(btn => {
+          const element = $(`#${btn.id}`);
+          if (element) {
+            element.addEventListener('click', () => {
+              console.log('➕ Abriendo modal para:', btn.type);
+              openModal(btn.type);
+            });
+          }
+        });
+
+        // Configurar delegación de eventos para editar/eliminar
+        document.addEventListener('click', (e) => {
+          if (e.target.classList.contains('edit-item')) {
+            const type = e.target.dataset.type;
+            const id = parseInt(e.target.dataset.id);
+            console.log('✏️ Editando:', type, id);
+            openModal(type, id);
+          } else if (e.target.classList.contains('delete-item')) {
+            const type = e.target.dataset.type;
+            const id = parseInt(e.target.dataset.id);
+            console.log('🗑️ Eliminando:', type, id);
+
+            if (confirm(`¿Estás seguro de que deseas eliminar este ${type}?`)) {
+              deleteItem(type, id);
+            }
+          }
+        });
+
+        // Configurar formularios de configuración
+        const forms = [
+          'player-form', 'radio-form', 'logo-form',
+          'favicon-form', 'info-form', 'navigation-form', 'settings-form'
+        ];
+
+        forms.forEach(formId => {
+          const form = $(`#${formId}`);
+          if (form) {
+            form.addEventListener('submit', function (e) {
+              e.preventDefault();
+              console.log('💾 Guardando configuración:', formId);
+
+              // Llamar a la función correspondiente
+              if (formId === 'player-form') savePlayerConfig(e);
+              else if (formId === 'radio-form') saveRadioConfig(e);
+              else if (formId === 'logo-form') saveLogoConfig(e);
+              else if (formId === 'favicon-form') saveFaviconConfig(e);
+              else if (formId === 'info-form') saveInfoConfig(e);
+              else if (formId === 'navigation-form') saveNavigationConfig(e);
+              else if (formId === 'settings-form') saveSettingsConfig(e);
+            });
+          }
+        });
+
+        // Configurar cambio de tipo en player
+        const playerType = $("#playerType");
+        if (playerType) {
+          playerType.addEventListener('change', togglePlayerFields);
+        }
+
+        // Configurar filtros de banners
+        $("#filter-banner-type").addEventListener('change', loadBanners);
+        $("#filter-banner-status").addEventListener('change', loadBanners);
+        $("#search-banners").addEventListener('input', loadBanners);
+
+        // Configurar sincronización
+        $("#sync-index").addEventListener('click', syncDataToIndex);
+        $("#sync-all").addEventListener('click', () => {
+          syncDataToIndex();
+          syncBannersToIndex();
+        });
+
+        // Cerrar modal al hacer clic fuera
+        $("#content-modal").addEventListener('click', (e) => {
+          if (e.target === $("#content-modal")) closeModal();
+        });
+
+        console.log('✅ Dashboard inicializado correctamente');
+
+      } catch (error) {
+        console.error('❌ Error en init:', error);
+        showNotification('Error al inicializar el dashboard', true);
+      }
+    }
+
+    // ===== CARGA DE DATOS DESDE MYSQL =====
+    async function loadDashboardData() {
+      try {
+        console.log('🔄 Iniciando carga de datos desde MySQL...');
+        showNotification('🔄 Cargando datos...', false, 2000);
+
+        // Usar Promise.all para cargar todo en paralelo
+        const [
+          mixesData,
+          videosData,
+          djsData,
+          eventsData,
+          bannersData,
+          playerData,
+          radioData,
+          customizationData,
+          navigationData
+        ] = await Promise.all([
+          cargarDelServidor('mixes').catch(e => { console.error('Error mixes:', e); return null; }),
+          cargarDelServidor('videos').catch(e => { console.error('Error videos:', e); return null; }),
+          cargarDelServidor('djs').catch(e => { console.error('Error djs:', e); return null; }),
+          cargarDelServidor('events').catch(e => { console.error('Error events:', e); return null; }),
+          cargarDelServidor('banners').catch(e => { console.error('Error banners:', e); return null; }),
+          cargarDelServidor('player').catch(e => { console.error('Error player:', e); return null; }),
+          cargarDelServidor('radio').catch(e => { console.error('Error radio:', e); return null; }),
+          cargarDelServidor('customization').catch(e => { console.error('Error customization:', e); return null; }),
+          cargarDelServidor('navigation').catch(e => { console.error('Error navigation:', e); return null; })
+        ]);
+
+        console.log('📊 Datos recibidos:', {
+          mixes: mixesData?.length || 0,
+          videos: videosData?.length || 0,
+          djs: djsData?.length || 0,
+          events: eventsData?.length || 0,
+          banners: bannersData?.length || 0
+        });
+
+        // Asignar datos con validación
+        MIXES = (mixesData && mixesData.length > 0) ? mixesData : DEFAULT_MIXES;
+        VIDEOS = (videosData && videosData.length > 0) ? videosData : DEFAULT_VIDEOS;
+        DJS = (djsData && djsData.length > 0) ? djsData : DEFAULT_DJS;
+        EVENTS = (eventsData && eventsData.length > 0) ? eventsData : DEFAULT_EVENTS;
+        BANNERS = (bannersData && bannersData.length > 0) ? bannersData : DEFAULT_BANNERS;
+
+        // Configuraciones (pueden ser objetos individuales)
+        PLAYER_CONFIG = (playerData && !playerData.error) ? playerData : DEFAULT_PLAYER;
+        RADIO_CONFIG = (radioData && !radioData.error) ? radioData : DEFAULT_RADIO;
+        CUSTOMIZATION = (customizationData && !customizationData.error) ? customizationData : DEFAULT_CUSTOMIZATION;
+        NAVIGATION_CONFIG = (navigationData && !navigationData.error) ? navigationData : DEFAULT_NAVIGATION;
+
+        console.log('✅ Datos asignados:', {
+          mixes: MIXES.length,
+          videos: VIDEOS.length,
+          djs: DJS.length,
+          events: EVENTS.length,
+          banners: BANNERS.length
+        });
+
+        // Actualizar la interfaz
+        updateUI();
+
+        showNotification('✅ Datos cargados correctamente');
+
+      } catch (error) {
+        console.error('❌ Error crítico cargando datos:', error);
+
+        // Cargar datos por defecto como fallback
+        loadDefaultData();
+        showNotification('⚠️ Usando datos locales - Error conectando con MySQL', true);
+      }
+    }
+
+    // Función para actualizar toda la UI
+    function updateUI() {
+      loadStats();
+      loadMixes();
+      loadVideos();
+      loadDJs();
+      loadEvents();
+      loadBanners();
+      loadPlayerConfig();
+      loadCustomization();
+      loadNavigationConfig();
+
+      console.log('🎨 Interfaz actualizada');
+    }
+
+    // Función de fallback con datos por defecto
+    function loadDefaultData() {
+      console.log('🔄 Cargando datos por defecto...');
+
+      MIXES = DEFAULT_MIXES;
+      VIDEOS = DEFAULT_VIDEOS;
+      DJS = DEFAULT_DJS;
+      EVENTS = DEFAULT_EVENTS;
+      BANNERS = DEFAULT_BANNERS;
+      PLAYER_CONFIG = DEFAULT_PLAYER;
+      RADIO_CONFIG = DEFAULT_RADIO;
+      CUSTOMIZATION = DEFAULT_CUSTOMIZATION;
+      NAVIGATION_CONFIG = DEFAULT_NAVIGATION;
+
+      updateUI();
+    }
+
+    // Iniciar cuando el DOM esté cargado
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+
+</html>

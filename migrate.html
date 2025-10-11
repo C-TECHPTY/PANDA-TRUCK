@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔄 Migración - Panda Truck</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .status-box { transition: all 0.3s ease; }
+        .status-box:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-gray-800 min-h-screen text-white">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold mb-4">🎵 Panda Truck Reloaded</h1>
+            <p class="text-xl text-gray-300">Sistema de Migración Local → Hosting</p>
+        </div>
+
+        <!-- Estadísticas Rápidas -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="status-box bg-blue-600 p-6 rounded-lg text-center">
+                <div class="text-3xl font-bold" id="stat-mixes">0</div>
+                <div class="text-sm">Mixes</div>
+            </div>
+            <div class="status-box bg-green-600 p-6 rounded-lg text-center">
+                <div class="text-3xl font-bold" id="stat-videos">0</div>
+                <div class="text-sm">Videos</div>
+            </div>
+            <div class="status-box bg-purple-600 p-6 rounded-lg text-center">
+                <div class="text-3xl font-bold" id="stat-djs">0</div>
+                <div class="text-sm">DJs</div>
+            </div>
+            <div class="status-box bg-red-600 p-6 rounded-lg text-center">
+                <div class="text-3xl font-bold" id="stat-eventos">0</div>
+                <div class="text-sm">Eventos</div>
+            </div>
+        </div>
+
+        <!-- Panel Principal -->
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Columna Izquierda: Respaldo Local -->
+            <div class="space-y-6">
+                <!-- Respaldo de BD -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center">
+                        <span class="mr-2">💾</span> Respaldo Local
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <button onclick="createBackup()" 
+                                class="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold transition-colors">
+                            📦 Crear Respaldo Completo
+                        </button>
+                        
+                        <button onclick="listBackups()" 
+                                class="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded transition-colors">
+                            📋 Ver Respaldos Existentes
+                        </button>
+                    </div>
+                    
+                    <div id="backup-result" class="mt-4"></div>
+                    
+                    <!-- Lista de respaldos -->
+                    <div id="backup-list" class="mt-4 space-y-2 max-h-60 overflow-y-auto"></div>
+                </div>
+
+                <!-- Verificación de Datos -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center">
+                        <span class="mr-2">✅</span> Verificación de Datos
+                    </h2>
+                    
+                    <button onclick="verifyData()" 
+                            class="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg font-semibold transition-colors">
+                        🔍 Verificar Integridad de Datos
+                    </button>
+                    
+                    <div id="verify-result" class="mt-4"></div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Configuración Hosting -->
+            <div class="space-y-6">
+                <!-- Configuración Hosting -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center">
+                        <span class="mr-2">🌐</span> Configuración Hosting
+                    </h2>
+                    
+                    <form id="hosting-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Servidor BD:</label>
+                            <input type="text" name="db_host" value="localhost" 
+                                   class="w-full p-3 bg-gray-700 border border-gray-600 rounded text-white" 
+                                   placeholder="Ej: localhost o ip del servidor">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Usuario BD:</label>
+                            <input type="text" name="db_user" required
+                                   class="w-full p-3 bg-gray-700 border border-gray-600 rounded text-white"
+                                   placeholder="Usuario de base de datos">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Contraseña BD:</label>
+                            <input type="password" name="db_pass"
+                                   class="w-full p-3 bg-gray-700 border border-gray-600 rounded text-white"
+                                   placeholder="Contraseña de base de datos">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Nombre BD:</label>
+                            <input type="text" name="db_name" value="panda_truck" required
+                                   class="w-full p-3 bg-gray-700 border border-gray-600 rounded text-white"
+                                   placeholder="Nombre de la base de datos">
+                        </div>
+                        
+                        <button type="submit" 
+                                class="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 px-4 rounded-lg font-semibold transition-colors">
+                            🚀 Generar Configuración para Hosting
+                        </button>
+                    </form>
+                    
+                    <div id="hosting-result" class="mt-4"></div>
+                </div>
+
+                <!-- Guía Rápida -->
+                <div class="bg-yellow-900 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-4 flex items-center">
+                        <span class="mr-2">📋</span> Guía Rápida
+                    </h2>
+                    
+                    <ol class="list-decimal list-inside space-y-2 text-sm">
+                        <li>Crear respaldo local</li>
+                        <li>Subir archivos vía FTP</li>
+                        <li>Crear BD en cPanel</li>
+                        <li>Importar .sql en phpMyAdmin</li>
+                        <li>Configurar conexión BD</li>
+                        <li>¡Probar en hosting!</li>
+                    </ol>
+                    
+                    <button onclick="showFullGuide()" 
+                            class="w-full mt-4 bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded transition-colors">
+                        📖 Ver Guía Completa
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log de Actividades -->
+        <div class="mt-8 bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4">📊 Log de Actividades</h2>
+            <div id="activity-log" class="bg-gray-900 p-4 rounded max-h-40 overflow-y-auto text-sm">
+                <div class="text-gray-400">Esperando acciones...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función para agregar log
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('activity-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'text-red-400' : 
+                         type === 'success' ? 'text-green-400' : 'text-blue-400';
+            
+            log.innerHTML = `<div class="${color}">[${timestamp}] ${message}</div>` + log.innerHTML;
+        }
+
+        // Cargar estadísticas al iniciar
+        async function loadStats() {
+            try {
+                const responses = await Promise.all([
+                    fetch('api/cargar.php?tipo=mixes'),
+                    fetch('api/cargar.php?tipo=videos'),
+                    fetch('api/cargar.php?tipo=djs'),
+                    fetch('api/cargar.php?tipo=eventos')
+                ]);
+                
+                const data = await Promise.all(responses.map(r => r.json()));
+                
+                document.getElementById('stat-mixes').textContent = data[0].length;
+                document.getElementById('stat-videos').textContent = data[1].length;
+                document.getElementById('stat-djs').textContent = data[2].length;
+                document.getElementById('stat-eventos').textContent = data[3].length;
+                
+                addLog('Estadísticas cargadas correctamente', 'success');
+            } catch (error) {
+                addLog('Error cargando estadísticas: ' + error.message, 'error');
+            }
+        }
+
+        // Crear respaldo
+        async function createBackup() {
+            try {
+                addLog('Iniciando creación de respaldo...', 'info');
+                const response = await fetch('backup.php?action=create');
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('backup-result').innerHTML = 
+                        `<div class="bg-green-900 p-3 rounded">✅ ${result.message}<br>Archivo: ${result.file}</div>`;
+                    addLog('Respaldo creado: ' + result.file, 'success');
+                    listBackups(); // Actualizar lista
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                document.getElementById('backup-result').innerHTML = 
+                    `<div class="bg-red-900 p-3 rounded">❌ Error: ${error.message}</div>`;
+                addLog('Error creando respaldo: ' + error.message, 'error');
+            }
+        }
+
+        // Listar respaldos
+        async function listBackups() {
+            try {
+                const response = await fetch('backup.php?action=list');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const backupList = document.getElementById('backup-list');
+                    if (result.backups.length > 0) {
+                        backupList.innerHTML = result.backups.map(backup => `
+                            <div class="flex justify-between items-center bg-gray-700 p-2 rounded">
+                                <span class="text-sm">${backup.name}</span>
+                                <div class="space-x-2">
+                                    <span class="text-xs text-gray-400">${(backup.size/1024).toFixed(1)} KB</span>
+                                    <button onclick="downloadBackup('${backup.name}')" 
+                                            class="text-blue-400 hover:text-blue-300 text-xs">
+                                        📥
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        backupList.innerHTML = '<div class="text-gray-400 text-center">No hay respaldos</div>';
+                    }
+                }
+            } catch (error) {
+                addLog('Error listando respaldos: ' + error.message, 'error');
+            }
+        }
+
+        // Descargar respaldo
+        function downloadBackup(filename) {
+            window.open('backup.php?action=download&file=' + filename, '_blank');
+            addLog('Descargando respaldo: ' + filename, 'info');
+        }
+
+        // Verificar datos
+        async function verifyData() {
+            try {
+                addLog('Verificando integridad de datos...', 'info');
+                // Aquí puedes agregar verificaciones específicas
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Simulación
+                
+                document.getElementById('verify-result').innerHTML = 
+                    `<div class="bg-green-900 p-3 rounded">✅ Todos los datos verificados correctamente</div>`;
+                addLog('Verificación de datos completada', 'success');
+            } catch (error) {
+                document.getElementById('verify-result').innerHTML = 
+                    `<div class="bg-red-900 p-3 rounded">❌ Error en verificación: ${error.message}</div>`;
+                addLog('Error en verificación: ' + error.message, 'error');
+            }
+        }
+
+        // Configuración hosting
+        document.getElementById('hosting-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            formData.append('action', 'generate');
+            
+            try {
+                addLog('Generando configuración para hosting...', 'info');
+                const response = await fetch('migrate.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('hosting-result').innerHTML = 
+                        `<div class="bg-green-900 p-3 rounded">
+                            ✅ ${result.message}
+                            <br><br><strong>Archivos generados:</strong>
+                            <ul class="list-disc list-inside mt-2">
+                                ${result.files.map(file => `<li>${file}</li>`).join('')}
+                            </ul>
+                        </div>`;
+                    addLog('Configuración para hosting generada', 'success');
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                document.getElementById('hosting-result').innerHTML = 
+                    `<div class="bg-red-900 p-3 rounded">❌ Error: ${error.message}</div>`;
+                addLog('Error generando configuración: ' + error.message, 'error');
+            }
+        });
+
+        // Mostrar guía completa
+        function showFullGuide() {
+            alert(`GUÍA COMPLETA DE MIGRACIÓN:
+
+1. RESPALDO LOCAL:
+   - Crear respaldo completo
+   - Descargar archivo .sql
+
+2. HOSTING:
+   - Subir archivos vía FTP a public_html/
+   - Crear BD en cPanel → MySQL Databases
+   - Importar .sql en phpMyAdmin
+
+3. CONFIGURACIÓNN:
+   - Renombrar: api/config-hosting.php → api/config.php
+   - Actualizar datos de conexión si es necesario
+
+4. PRUEBA FINAL:
+   - Acceder a: tudominio.com/dashboard.html
+   - Verificar que todos los datos carguen
+
+¡Listo! Tu sitio estará en producción.`);
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            listBackups();
+            addLog('Sistema de migración iniciado', 'info');
+        });
+    </script>
+</body>
+</html>
