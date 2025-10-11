@@ -740,6 +740,66 @@
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => document.querySelectorAll(sel);
 
+    async function fetchJson(url) {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(`Error ${response.status} al solicitar ${url}`);
+      }
+      const data = await response.json();
+      if (data && data.error) {
+        throw new Error(data.error);
+      }
+      return data;
+    }
+
+    async function fetchDataFromServer() {
+      try {
+        const [
+          mixes,
+          videos,
+          djs,
+          events,
+          player,
+          radio,
+          customization,
+          navigation,
+          banners
+        ] = await Promise.all([
+          fetchJson('api/cargar.php?tipo=mixes'),
+          fetchJson('api/cargar.php?tipo=videos'),
+          fetchJson('api/cargar.php?tipo=djs'),
+          fetchJson('api/cargar.php?tipo=events'),
+          fetchJson('api/cargar.php?tipo=player'),
+          fetchJson('api/cargar.php?tipo=radio'),
+          fetchJson('api/cargar.php?tipo=customization'),
+          fetchJson('api/cargar.php?tipo=navigation'),
+          fetchJson('api/cargar.php?tipo=banners')
+        ]);
+
+        const indexData = {
+          mixes: Array.isArray(mixes) ? mixes : [],
+          videos: Array.isArray(videos) ? videos : [],
+          djs: Array.isArray(djs) ? djs : [],
+          events: Array.isArray(events) ? events : [],
+          player: player || {},
+          radio: radio || {},
+          customization: customization || {},
+          navigation: navigation || {},
+          lastSync: Date.now()
+        };
+
+        const safeBanners = Array.isArray(banners) ? banners : [];
+
+        localStorage.setItem(SYNC_KEYS.INDEX_DATA, JSON.stringify(indexData));
+        localStorage.setItem(SYNC_KEYS.BANNERS, JSON.stringify(safeBanners));
+
+        return true;
+      } catch (error) {
+        console.error('No se pudo obtener datos desde el servidor:', error);
+        return false;
+      }
+    }
+
     // ===== CARGAR DATOS SINCRONIZADOS =====
     function loadSyncedData() {
       try {
@@ -1606,9 +1666,18 @@
     }
 
     // ===== INICIALIZAR =====
-    function init() {
+    async function init() {
+      // Intentar obtener la versión más reciente del servidor.
+      const fetched = await fetchDataFromServer();
+      if (!fetched) {
+        console.warn('Usando datos almacenados localmente');
+      }
+
       // Cargar datos sincronizados
-      loadSyncedData();
+      const hasData = loadSyncedData();
+      if (!hasData) {
+        showNotification('No se pudieron cargar datos recientes', 4000);
+      }
 
       // Aplicar personalización
       applyCustomization();
