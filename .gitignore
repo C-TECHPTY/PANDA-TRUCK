@@ -19,3 +19,33 @@
 /fuel/app/logs/*/*/*
 /fuel/app/cache/*/*
 /fuel/app/config/crypt.php
+
+# Local configuration and secrets
+includes/config.local.php
+.env
+.env.*
+
+# Runtime files
+error_log
+api/error_log
+*.log
+uploads/
+
+# Backups and generated archives
+BACKUP2/
+backups/
+*.zip
+* - copia.php
+*REPORTE COMPLETO*
+*MANUAL DE USUARIO*
+
+# Local/debug helpers
+hash.php
+generate_hash.php
+api_test*
+test*.php
+test*.html
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

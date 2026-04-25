@@ -1,0 +1,234 @@
+:root {
+    --primary: #e1261d;
+    --primary-hover: #c81e16;
+    --bg-dark: #0a0a0a;
+    --bg-card: rgba(10, 10, 10, 0.85);
+    --text-light: #ffffff;
+    --text-muted: #a3a3a3;
+}
+
+/* ==================== FONDO CON TEXTURA DE PAPEL ARRUGADO NEGRO ==================== */
+body {
+    background-color: var(--bg-dark);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cfilter id='wrinkle'%3E%3CfeGaussianBlur in='SourceAlpha' stdDeviation='1'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='5' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%230a0a0a'/%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
+    background-attachment: fixed;
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    position: relative;
+}
+
+/* Capa de gradiente para dar profundidad */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 30% 40%, rgba(225, 38, 29, 0.03) 0%, transparent 70%);
+    z-index: 0;
+}
+
+/* Efecto de viñeta para dar enfoque al centro */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+    z-index: 0;
+}
+
+/* Asegurar que el contenido esté sobre las texturas */
+header, main, footer, .modal, .toast, .section-content {
+    position: relative;
+    z-index: 1;
+}
+
+/* Mejorar contraste de las tarjetas con fondo semi-transparente */
+.bg-neutral-900, .bg-neutral-800, .bg-neutral-950 {
+    background-color: rgba(5, 5, 5, 0.85) !important;
+    backdrop-filter: blur(0px);
+    border: 1px solid rgba(225, 38, 29, 0.1);
+}
+
+/* Efecto de brillo sutil en tarjetas al hacer hover */
+.album-card, .mix-card, .video-card, .stat-card {
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(225, 38, 29, 0.1);
+}
+
+.album-card:hover, .mix-card:hover, .video-card:hover, .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(225, 38, 29, 0.3);
+    border-color: rgba(225, 38, 29, 0.5) !important;
+}
+
+/* ==================== COLORES PRINCIPALES ==================== */
+.text-primary {
+    color: var(--primary);
+}
+
+.bg-primary {
+    background-color: var(--primary);
+}
+
+.bg-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+.hover\:bg-primary-hover:hover {
+    background-color: var(--primary-hover);
+}
+
+.hover\:border-primary:hover {
+    border-color: var(--primary);
+}
+
+.border-primary {
+    border-color: var(--primary);
+}
+
+.nav-link.active {
+    background-color: rgba(225, 38, 29, 0.15);
+    color: var(--primary);
+    border-left: 3px solid var(--primary);
+}
+
+/* ==================== SCROLLBAR PERSONALIZADA ==================== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1a1a;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-hover);
+}
+
+/* ==================== MEJORAS ADICIONALES ==================== */
+
+/* Efecto de vidrio esmerilado para headers */
+header {
+    background-color: rgba(5, 5, 5, 0.9) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(225, 38, 29, 0.3);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Efecto de brillo en botones */
+.btn-primary, button[class*="bg-primary"] {
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary:hover, button[class*="bg-primary"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(225, 38, 29, 0.4);
+}
+
+/* Animación sutil en tarjetas al cargar */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.album-card, .mix-card, .video-card {
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+/* Mejora de tipografía */
+body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--text-light);
+    line-height: 1.5;
+}
+
+/* Texto secundario */
+.text-neutral-400, .text-neutral-500 {
+    color: var(--text-muted);
+}
+
+/* Efecto de brillo en el hero */
+.bg-gradient-to-r.from-primary\/20 {
+    background: linear-gradient(90deg, rgba(225, 38, 29, 0.15) 0%, transparent 100%);
+}
+
+/* Mejora en modales */
+.modal-content {
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(225, 38, 29, 0.3);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Efecto de hover en enlaces */
+a:not(.btn-primary):hover {
+    color: var(--primary);
+    transition: color 0.2s ease;
+}
+
+/* Sombra sutil para títulos */
+h1, h2, h3, .font-bold {
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+    letter-spacing: -0.02em;
+}
+
+/* Efecto de brillo en el logo */
+img[alt*="Panda"] {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    transition: filter 0.3s ease;
+}
+
+img[alt*="Panda"]:hover {
+    filter: drop-shadow(0 2px 8px rgba(225, 38, 29, 0.3));
+}
+
+/* Mejora en los botones de descarga */
+.btn-download-album {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    transition: all 0.3s ease;
+}
+
+.btn-download-album:hover {
+    transform: scale(1.02);
+    box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.3);
+}
+
+/* Efecto de vidrio para secciones destacadas */
+section[id*="superpacks"], .bg-gradient-to-r {
+    position: relative;
+    overflow: hidden;
+}
+
+section[id*="superpacks"]::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(225, 38, 29, 0.05) 0%, transparent 70%);
+    pointer-events: none;
+}

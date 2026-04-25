@@ -1,0 +1,6 @@
+# .htaccess
+RewriteEngine On
+RewriteBase /panda-truck-v2/
+
+# Redirigir index.php
+DirectoryIndex index.php index.html
