@@ -631,7 +631,9 @@ try {
         }
         
         // ==================== RADIO ====================
-        const radioAudio = new Audio('<?php echo $radio_url; ?>');
+        const radioAudio = new Audio();
+        radioAudio.preload = 'none';
+        radioAudio.src = '<?php echo $radio_url; ?>';
         const radioPlayBtn = document.getElementById('radioPlayBtn');
         const radioStopBtn = document.getElementById('radioStopBtn');
         const radioVolume = document.getElementById('radioVolume');

@@ -437,6 +437,7 @@ if (!$current_mix && count($all_mixes) > 0) {
     <script>
         // Elementos del DOM
         const audio = new Audio();
+        audio.preload = 'none';
         const playBtn = document.getElementById('play-btn');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');

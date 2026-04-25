@@ -3,6 +3,7 @@
 class PandaPlayer {
     constructor() {
         this.audio = new Audio();
+        this.audio.preload = 'none';
         this.currentPlaylist = [];
         this.currentIndex = 0;
         this.isPlaying = false;
