@@ -654,6 +654,9 @@ $maintenance_mode = $settings['maintenance_mode'] ?? 0;
                 <div class="nav-item" data-section="banners"><i class="fas fa-ad"></i> Publicidad <span class="count">(<?php echo $total_banners; ?>)</span></div>
                 <div class="nav-item" data-section="stats"><i class="fas fa-chart-bar"></i> Estadísticas</div>
                 
+                <a href="admin/dj_pro.php" class="nav-item block"><i class="fas fa-crown"></i> DJ PRO</a>
+                <a href="admin/reports/generate_partner_report.php" class="nav-item block"><i class="fas fa-file-pdf"></i> Reporte Socios</a>
+
                 <?php if ($user_role === 'superadmin'): ?>
                 <div class="border-t my-2 pt-2"></div>
                 <div class="nav-item" data-section="users"><i class="fas fa-users"></i> Usuarios</div>

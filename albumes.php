@@ -1,8 +1,10 @@
 <?php
 // albumes.php - Catálogo de álbumes completos con descarga ZIP directa
 require_once 'includes/config.php';
+require_once 'includes/track_visit.php';
 
 $db = getDB();
+trackVisit('albumes');
 
 // Obtener todos los álbumes activos
 $stmt = $db->query("SELECT * FROM albumes WHERE active = 1 ORDER BY year DESC, id DESC");

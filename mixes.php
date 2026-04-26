@@ -1,8 +1,10 @@
 <?php
 // mixes.php - Todos los mixes
 require_once 'includes/config.php';
+require_once 'includes/track_visit.php';
 
 $db = getDB();
+trackVisit('mixes');
 $mixes = $db->query("SELECT * FROM mixes WHERE active = 1 ORDER BY date DESC")->fetchAll();
 $genres = $db->query("SELECT DISTINCT genre FROM mixes WHERE active = 1 ORDER BY genre")->fetchAll();
 ?>

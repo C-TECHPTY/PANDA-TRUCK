@@ -1,5 +1,7 @@
 <?php
 require_once 'includes/config.php';
+require_once 'includes/track_visit.php';
+trackVisit('superpacks');
 ?>
 <!DOCTYPE html>
 <html lang="es">

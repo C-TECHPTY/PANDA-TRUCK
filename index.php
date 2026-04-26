@@ -28,8 +28,10 @@ if (!$isAdmin) {
 
 // index.php - Página principal COMPLETA con Radio Online y Publicidad Sidebar
 require_once 'includes/config.php';
+require_once 'includes/track_visit.php';
 
 $db = getDB();
+trackVisit('home');
 
 // Obtener mixes destacados (últimos 9)
 $stmt = $db->prepare("SELECT * FROM mixes WHERE active = 1 ORDER BY id DESC LIMIT 9");
@@ -261,6 +263,7 @@ try {
                 <a href="albumes.php" class="hover:text-primary transition">Álbumes</a>
                 <a href="#superpacks" class="hover:text-primary transition">Super Packs</a>
                 <a href="#top-djs" class="hover:text-primary transition">Top DJs</a>
+                <a href="dj-pro.php" class="hover:text-primary transition">DJ PRO</a>
                 <a href="GuíaDJs.php" class="px-4 py-2 bg-primary rounded-lg hover:bg-primary-hover transition">Sube tu mix</a>
                 <a href="player/index.php" class="px-4 py-2 bg-neutral-800 rounded-lg hover:bg-primary transition flex items-center gap-2">
                     <i class="fas fa-headphones"></i> Reproductor
@@ -281,6 +284,7 @@ try {
                 <a href="albumes.php" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Álbumes</a>
                 <a href="#superpacks" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Super Packs</a>
                 <a href="#top-djs" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Top DJs</a>
+                <a href="dj-pro.php" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">DJ PRO</a>
                 <a href="GuíaDJs.php" class="block px-3 py-2 rounded-lg bg-primary text-center">Sube tu mix</a>
                 <a href="player/index.php" class="block px-3 py-2 rounded-lg bg-neutral-800 text-center">🎧 Reproductor</a>
                 <a href="player/video.php" class="block px-3 py-2 rounded-lg bg-neutral-800 text-center">🎬 Videos</a>
@@ -301,6 +305,9 @@ try {
                     </p>
                     <div class="flex flex-wrap gap-4">
                         <a href="#mixes" class="px-6 py-3 bg-primary rounded-xl hover:bg-primary-hover transition">Explorar Mixes</a>
+                        <a href="dj-pro.php" class="px-6 py-3 bg-neutral-800 rounded-xl hover:bg-primary transition flex items-center gap-2">
+                            <i class="fas fa-crown"></i> DJ PRO
+                        </a>
                         <a href="player/video.php" class="px-6 py-3 bg-neutral-800 rounded-xl hover:bg-primary transition flex items-center gap-2">
                             <i class="fas fa-video"></i> Ver Videos
                         </a>

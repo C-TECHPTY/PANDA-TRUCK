@@ -1,6 +1,8 @@
 <?php
 // lista_djs.php - Página completa con todos los DJs y buscador
 require_once 'includes/config.php';
+require_once 'includes/track_visit.php';
+trackVisit('djs_list');
 ?>
 <!DOCTYPE html>
 <html lang="es">

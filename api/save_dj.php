@@ -25,23 +25,41 @@ if (!$data) {
 $db = getDB();
 
 try {
+    $name = trim($data['name'] ?? '');
+    $slug = trim($data['slug'] ?? '');
+    if ($slug === '' && $name !== '') {
+        $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $name));
+        $slug = trim($slug, '-');
+    }
+    $avatar = $data['avatar'] ?? '';
+    $bio = $data['bio'] ?? '';
+    $biography = $data['biography'] ?? $bio;
+    $profilePhoto = $data['profile_photo'] ?? $avatar;
+
     if (isset($data['id']) && $data['id'] > 0) {
         $sql = "UPDATE djs SET name = :name, genre = :genre, city = :city, bio = :bio, 
-                avatar = :avatar, socials = :socials, active = :active WHERE id = :id";
+                avatar = :avatar, socials = :socials, email = :email, instagram = :instagram,
+                biography = :biography, profile_photo = :profile_photo, slug = :slug,
+                active = :active WHERE id = :id";
         $stmt = $db->prepare($sql);
         $stmt->bindValue(':id', $data['id']);
     } else {
-        $sql = "INSERT INTO djs (name, genre, city, bio, avatar, socials, active) 
-                VALUES (:name, :genre, :city, :bio, :avatar, :socials, :active)";
+        $sql = "INSERT INTO djs (name, genre, city, bio, avatar, socials, email, instagram, biography, profile_photo, slug, active)
+                VALUES (:name, :genre, :city, :bio, :avatar, :socials, :email, :instagram, :biography, :profile_photo, :slug, :active)";
         $stmt = $db->prepare($sql);
     }
 
-    $stmt->bindValue(':name', $data['name'] ?? '');
+    $stmt->bindValue(':name', $name);
     $stmt->bindValue(':genre', $data['genre'] ?? '');
     $stmt->bindValue(':city', $data['city'] ?? '');
-    $stmt->bindValue(':bio', $data['bio'] ?? '');
-    $stmt->bindValue(':avatar', $data['avatar'] ?? '');
+    $stmt->bindValue(':bio', $bio);
+    $stmt->bindValue(':avatar', $avatar);
     $stmt->bindValue(':socials', $data['socials'] ?? '');
+    $stmt->bindValue(':email', $data['email'] ?? '');
+    $stmt->bindValue(':instagram', $data['instagram'] ?? '');
+    $stmt->bindValue(':biography', $biography);
+    $stmt->bindValue(':profile_photo', $profilePhoto);
+    $stmt->bindValue(':slug', $slug);
     $stmt->bindValue(':active', $data['active'] ?? 1);
 
     if ($stmt->execute()) {
