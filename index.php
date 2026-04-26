@@ -821,8 +821,8 @@ try {
                 .then(data => {
                     if (data.top_djs && data.top_djs.length > 0) {
                         container.innerHTML = data.top_djs.map((dj, index) => `
-                            <a href="dj/perfil.php?dj=${encodeURIComponent(dj.name)}" class="group">
-                                <div class="bg-neutral-900 rounded-xl p-4 text-center border border-neutral-800 hover:border-primary transition">
+                            <a href="dj.php?slug=${encodeURIComponent(dj.slug || dj.id || dj.name)}" class="group">
+                                <div class="bg-neutral-900 rounded-xl p-4 text-center border ${dj.plan === 'founder' || (dj.plan === 'pro' && dj.subscription_status === 'active') ? 'border-primary/60' : 'border-neutral-800'} hover:border-primary transition">
                                     <div class="relative inline-block">
                                         <div class="w-20 h-20 rounded-full bg-neutral-800 mx-auto mb-3 overflow-hidden">
                                             <img src="${dj.avatar || 'assets/img/default-avatar.jpg'}" 
@@ -833,6 +833,15 @@ try {
                                         ${index === 0 ? '<div class="absolute -top-2 -right-2 text-2xl">👑</div>' : ''}
                                     </div>
                                     <h4 class="font-semibold text-sm group-hover:text-primary transition truncate">${escapeHtml(dj.name)}</h4>
+                                    <div class="mt-2">
+                                        ${dj.plan === 'founder'
+                                            ? '<span class="inline-flex items-center gap-1 rounded-full border border-amber-400/50 bg-amber-400/10 px-2 py-1 text-[10px] font-bold uppercase text-amber-300"><i class="fas fa-star"></i> DJ FUNDADOR</span>'
+                                            : (dj.plan === 'pro' && dj.subscription_status === 'active'
+                                                ? '<span class="inline-flex items-center gap-1 rounded-full border border-primary/60 bg-primary/10 px-2 py-1 text-[10px] font-bold uppercase text-primary"><i class="fas fa-crown"></i> DJ PRO</span>'
+                                                : '<span class="inline-flex items-center gap-1 rounded-full border border-neutral-700 px-2 py-1 text-[10px] font-bold uppercase text-neutral-400">BASICO</span>'
+                                            )
+                                        }
+                                    </div>
                                     <p class="text-xs text-neutral-400 mt-1"><i class="fas fa-download"></i> ${(dj.total_downloads || 0).toLocaleString()} descargas</p>
                                     <p class="text-xs text-neutral-500 mt-1"><i class="fas fa-music"></i> ${dj.total_mixes || 0} mixes</p>
                                     <span class="mt-3 inline-block text-xs text-primary opacity-0 group-hover:opacity-100 transition">Ver perfil →</span>

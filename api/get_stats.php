@@ -79,6 +79,12 @@ try {
         d.city, 
         d.avatar, 
         d.bio,
+        d.plan,
+        d.subscription_status,
+        d.subscription_end,
+        d.slug,
+        d.is_featured,
+        d.priority,
         COALESCE(SUM(s.downloads), 0) as total_downloads,
         COALESCE(SUM(s.plays), 0) as total_plays,
         COUNT(DISTINCT m.id) as total_mixes
@@ -88,7 +94,17 @@ try {
         WHERE d.active = 1
         GROUP BY d.id
         HAVING total_mixes > 0
-        ORDER BY total_downloads DESC
+        ORDER BY
+            CASE
+                WHEN d.plan = 'founder' THEN 1
+                WHEN d.plan = 'pro'
+                    AND d.subscription_status = 'active'
+                    AND (d.subscription_end IS NULL OR d.subscription_end >= NOW()) THEN 2
+                ELSE 3
+            END,
+            d.is_featured DESC,
+            d.priority DESC,
+            total_downloads DESC
         LIMIT 5");
     $top_djs = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -120,6 +136,12 @@ try {
         d.city, 
         d.avatar, 
         d.bio,
+        d.plan,
+        d.subscription_status,
+        d.subscription_end,
+        d.slug,
+        d.is_featured,
+        d.priority,
         COALESCE(SUM(s.downloads), 0) as total_downloads,
         COALESCE(SUM(s.plays), 0) as total_plays,
         COUNT(DISTINCT m.id) as total_mixes
@@ -128,7 +150,17 @@ try {
         LEFT JOIN statistics s ON m.id = s.item_id AND s.item_type = 'mix'
         WHERE d.active = 1
         GROUP BY d.id
-        ORDER BY total_downloads DESC");
+        ORDER BY
+            CASE
+                WHEN d.plan = 'founder' THEN 1
+                WHEN d.plan = 'pro'
+                    AND d.subscription_status = 'active'
+                    AND (d.subscription_end IS NULL OR d.subscription_end >= NOW()) THEN 2
+                ELSE 3
+            END,
+            d.is_featured DESC,
+            d.priority DESC,
+            total_downloads DESC");
     $all_djs = $all_djs_stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // ============================================
