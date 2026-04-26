@@ -1,65 +1,107 @@
-# Configuracion CDN para Audio
+# Configuracion CDN de Audio
 
-Objetivo: que los MP3 salgan por CDN/Backblaze/Bunny y no por PHP.
+Objetivo: reproducir MP3 desde BunnyCDN con origin en Backblaze B2, sin streaming ni descarga de MP3 desde PHP.
 
-## Arquitectura recomendada
+## URLs confirmadas
 
-```text
-Namecheap = PHP, dashboard y base de datos
-Backblaze B2 = almacenamiento de MP3
-BunnyCDN = entrega rapida de MP3 al usuario
-```
+- CDN: `https://panda-truck.b-cdn.net/`
+- Origin Backblaze: `https://f005.backblazeb2.com/file/DJIMMY-PANDA/`
+- Prueba confirmada: `https://panda-truck.b-cdn.net/MIXES/PUCHO_ANDS_FRIENDS_VARIADO.mp3`
 
 ## Regla principal
 
-No usar PHP para servir MP3 pesados:
+- Los MP3 se reproducen desde BunnyCDN.
+- Los MP3 se descargan desde BunnyCDN.
+- PHP solo registra estadisticas y redirige.
+- No usar PHP para streaming de MP3.
+- No usar el hosting como origen publico de MP3.
 
-- No `readfile()` para MP3.
-- No `file_get_contents()` para MP3.
-- No streaming de audio desde PHP.
+## Configuracion del sistema
 
-PHP solo debe:
+En `includes/config.local.php`:
 
-1. Registrar reproduccion o descarga.
-2. Redirigir al archivo real/CDN.
+```php
+'CDN_BASE_URL' => 'https://panda-truck.b-cdn.net/',
+'BACKBLAZE_AUDIO_ORIGIN' => 'https://f005.backblazeb2.com/file/DJIMMY-PANDA/',
+```
 
-## Configuracion central
+La logica central esta en:
 
-Agregar en `system_settings`:
+- `includes/cdn.php`
+- `cdn_audio_url($path)`
+- `cdn_download_url($path, $filename = '')`
+- `cdn_normalize_audio_path($path)`
+
+## Como guardar rutas de MP3
+
+Preferido:
 
 ```text
-cdn_base_url=https://cdn.tudominio.com/
+MIXES/PUCHO_ANDS_FRIENDS_VARIADO.mp3
 ```
 
-Si en la base se guarda ruta relativa:
+El sistema lo convierte a:
 
 ```text
-MIXES/archivo.mp3
+https://panda-truck.b-cdn.net/MIXES/PUCHO_ANDS_FRIENDS_VARIADO.mp3
 ```
 
-La URL final debe construirse como:
+Tambien acepta URLs viejas de Backblaze:
 
 ```text
-CDN_BASE_URL + ruta_relativa
+https://f005.backblazeb2.com/file/DJIMMY-PANDA/MIXES/archivo.mp3
 ```
 
-El sistema debe mantener compatibilidad con URLs antiguas completas de Backblaze.
+y las convierte en URL CDN al reproducir/descargar.
 
-## BunnyCDN Pull Zone
+## Reproduccion
 
-1. Crear cuenta en BunnyCDN.
-2. Crear Pull Zone.
-3. Origin URL: URL publica del bucket Backblaze o dominio actual de archivos.
-4. Agregar hostname CDN: `cdn.tudominio.com`.
-5. Crear CNAME en DNS apuntando a BunnyCDN.
-6. Probar un MP3 directo.
+El reproductor usa `preload = 'none'` y carga:
 
-## Descarga forzada
-
-Para forzar descarga sin PHP, configurar header en CDN/storage:
-
-```http
-Content-Disposition: attachment
+```php
+cdn_audio_url($mix['url'])
 ```
 
-Si no se configura, algunos navegadores pueden abrir el MP3 en vez de descargarlo.
+Archivos revisados:
+
+- `player/index.php`
+- `dj/superpack.php`
+- `api/player.php`
+
+## Descarga
+
+Los botones deben apuntar a:
+
+```text
+api/download_mix.php?id=ID_DEL_MIX
+```
+
+Ese endpoint:
+
+1. Valida el ID.
+2. Busca el mix activo.
+3. Suma descarga en `mixes`.
+4. Suma descarga en `statistics`.
+5. Genera URL BunnyCDN con `cdn_download_url()`.
+6. Redirige con `Location`.
+
+## BunnyCDN
+
+En BunnyCDN:
+
+1. Crear o usar Pull Zone `panda-truck`.
+2. Origin URL: `https://f005.backblazeb2.com/file/DJIMMY-PANDA/`
+3. Probar:
+   `https://panda-truck.b-cdn.net/MIXES/PUCHO_ANDS_FRIENDS_VARIADO.mp3`
+
+Segun la documentacion de Bunny, Edge Rules permite acciones como `Set Response Header` y `Force Download`. Para forzar descarga al navegador, usar una regla especifica de descarga, no global sobre todos los MP3 porque romperia el player.
+
+Fuente Bunny: https://docs.bunny.net/cdn/edge-rules
+
+## Pruebas
+
+- Abrir una URL CDN directa.
+- Abrir `player/index.php?id=ID`.
+- En DevTools, confirmar que el audio sale de `panda-truck.b-cdn.net`.
+- Hacer click en descargar y confirmar que primero pasa por `api/download_mix.php?id=ID` y luego redirige al CDN.
+- Confirmar que no aparece Backblaze directo en HTML publico para mixes.

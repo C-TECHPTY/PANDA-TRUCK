@@ -108,6 +108,7 @@ $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
     <title><?php echo htmlspecialchars($dj['name']); ?> - Panda Truck</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
     <style>
         :root { --pt-red: #e1261d; }
         body {
@@ -126,25 +127,177 @@ $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
             word-break: break-word;
             line-height: 1.02;
         }
+        .dj-profile-shell {
+            isolation: isolate;
+        }
+        .dj-profile-panel {
+            overflow: hidden;
+        }
+        .dj-profile-photo {
+            aspect-ratio: 1 / 1;
+        }
+        .dj-profile-actions a {
+            min-height: 46px;
+        }
+        .mix-row-title {
+            overflow-wrap: anywhere;
+        }
+        @media (max-width: 767px) {
+            body {
+                background:
+                    radial-gradient(circle at 50% -10%, rgba(225, 38, 29, 0.2), transparent 18rem),
+                    linear-gradient(180deg, #070707 0%, #101010 52%, #050505 100%);
+            }
+            .dj-profile-shell {
+                padding: 0.85rem !important;
+                padding-bottom: 2rem !important;
+            }
+            .dj-profile-topbar {
+                margin-bottom: 0.85rem !important;
+            }
+            .dj-profile-topbar a {
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                background: rgba(23, 23, 23, 0.78);
+                padding: 0.7rem 0.85rem;
+                border-radius: 0.85rem;
+            }
+            .dj-profile-topbar a:first-child {
+                flex: 1;
+            }
+            .dj-profile-panel {
+                border-radius: 1rem !important;
+                border-color: rgba(255, 255, 255, 0.1);
+            }
+            .dj-profile-layout {
+                display: block !important;
+            }
+            .dj-profile-aside {
+                padding: 1rem !important;
+                border-right: 0 !important;
+            }
+            .dj-profile-photo-wrap {
+                max-width: 18rem;
+                margin: 0 auto;
+            }
+            .dj-profile-photo {
+                border-radius: 1rem !important;
+            }
+            .dj-profile-badges {
+                justify-content: center;
+            }
+            .dj-name {
+                margin-top: 1rem !important;
+                text-align: center;
+                font-size: clamp(1.9rem, 10vw, 2.65rem) !important;
+                letter-spacing: 0 !important;
+            }
+            .dj-profile-meta {
+                justify-content: center;
+                text-align: center;
+            }
+            .dj-profile-stats {
+                gap: 0.55rem !important;
+            }
+            .dj-profile-stats > div {
+                padding: 0.7rem 0.4rem !important;
+            }
+            .dj-profile-stats p:first-child {
+                font-size: 1.08rem !important;
+                line-height: 1.15;
+            }
+            .dj-profile-stats p:last-child {
+                font-size: 0.62rem !important;
+                letter-spacing: 0.02em;
+            }
+            .dj-profile-actions {
+                gap: 0.65rem !important;
+            }
+            .dj-profile-actions .grid {
+                grid-template-columns: 1fr !important;
+            }
+            .dj-profile-content {
+                padding: 1rem !important;
+            }
+            .dj-profile-bio-card {
+                padding: 1rem !important;
+                margin-bottom: 1rem !important;
+                border-radius: 0.95rem !important;
+            }
+            .dj-profile-bio-heading {
+                align-items: flex-start !important;
+            }
+            .dj-profile-bio-card p {
+                line-height: 1.65 !important;
+            }
+            .dj-profile-section-head {
+                align-items: flex-start !important;
+                margin-bottom: 0.75rem !important;
+            }
+            .dj-profile-section-head h2 {
+                font-size: 1.15rem !important;
+                line-height: 1.2;
+            }
+            .mix-row {
+                display: grid !important;
+                grid-template-columns: 4.75rem minmax(0, 1fr);
+                gap: 0.75rem !important;
+                align-items: start !important;
+                padding: 0.75rem !important;
+                border-radius: 0.95rem !important;
+            }
+            .mix-row-cover {
+                width: 4.75rem !important;
+                height: 4.75rem !important;
+                border-radius: 0.8rem !important;
+            }
+            .mix-row-title {
+                white-space: normal !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+                line-height: 1.2;
+                font-size: 0.95rem;
+            }
+            .mix-row-meta {
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                font-size: 0.78rem !important;
+                line-height: 1.35;
+            }
+            .mix-row-actions {
+                grid-column: 1 / -1;
+                width: 100%;
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.65rem !important;
+                margin-top: 0.15rem;
+            }
+            .mix-row-actions a {
+                width: 100% !important;
+                height: 44px !important;
+                border-radius: 0.8rem !important;
+            }
+        }
     </style>
 </head>
 <body class="text-white">
-    <main class="max-w-7xl mx-auto px-4 py-6 md:px-8 md:py-10">
-        <div class="flex items-center justify-between gap-4 mb-6">
+    <main class="dj-profile-shell max-w-7xl mx-auto px-4 py-6 md:px-8 md:py-10">
+        <div class="dj-profile-topbar flex items-center justify-between gap-4 mb-6">
             <a href="index.php" class="inline-flex items-center gap-2 text-sm text-neutral-400 hover:text-red-500 transition">
                 <i class="fas fa-arrow-left"></i> Volver al inicio
             </a>
-            <a href="dj-pro.php" class="hidden sm:inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold hover:bg-red-700 transition">
+            <a href="dj-pro.php" class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold hover:bg-red-700 transition">
                 <i class="fas fa-bolt"></i> DJ PRO
             </a>
         </div>
 
-        <section class="panel overflow-hidden rounded-2xl">
-            <div class="grid lg:grid-cols-[340px_1fr]">
-                <aside class="border-b border-white/10 bg-black/30 p-5 lg:border-b-0 lg:border-r lg:p-6">
-                    <div class="relative">
-                        <img src="<?php echo htmlspecialchars($photo); ?>" alt="<?php echo htmlspecialchars($dj['name']); ?>" class="aspect-square w-full rounded-xl object-cover shadow-2xl" onerror="this.src='assets/img/default-avatar.jpg'">
-                        <div class="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2">
+        <section class="dj-profile-panel panel rounded-2xl">
+            <div class="dj-profile-layout grid lg:grid-cols-[340px_1fr]">
+                <aside class="dj-profile-aside border-b border-white/10 bg-black/30 p-5 lg:border-b-0 lg:border-r lg:p-6">
+                    <div class="dj-profile-photo-wrap relative">
+                        <img src="<?php echo htmlspecialchars($photo); ?>" alt="<?php echo htmlspecialchars($dj['name']); ?>" class="dj-profile-photo w-full rounded-xl object-cover shadow-2xl" onerror="this.src='assets/img/default-avatar.jpg'">
+                        <div class="dj-profile-badges absolute bottom-3 left-3 right-3 flex flex-wrap gap-2">
                 <?php if ($isFounder): ?>
                             <span class="inline-flex items-center gap-2 rounded-full bg-amber-500 px-3 py-1 text-xs font-black text-black"><i class="fas fa-star"></i> DJ FUNDADOR</span>
                 <?php elseif ($isPro): ?>
@@ -156,12 +309,12 @@ $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
                     </div>
 
                     <h1 class="dj-name mt-5 text-3xl font-black tracking-tight md:text-4xl"><?php echo htmlspecialchars($dj['name']); ?></h1>
-                    <p class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-400">
+                    <p class="dj-profile-meta mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-400">
                         <?php if (!empty($dj['genre'])): ?><span><i class="fas fa-music mr-1 text-red-500"></i><?php echo htmlspecialchars($dj['genre']); ?></span><?php endif; ?>
                         <?php if (!empty($dj['city'])): ?><span><i class="fas fa-location-dot mr-1 text-red-500"></i><?php echo htmlspecialchars($dj['city']); ?></span><?php endif; ?>
                     </p>
 
-                    <div class="mt-5 grid grid-cols-3 gap-2">
+                    <div class="dj-profile-stats mt-5 grid grid-cols-3 gap-2">
                         <div class="rounded-lg bg-neutral-950/70 p-3 text-center">
                             <p class="text-xl font-black"><?php echo number_format($totalMixCount); ?></p>
                             <p class="text-[11px] uppercase text-neutral-500">Mixes</p>
@@ -176,7 +329,7 @@ $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
                         </div>
                     </div>
 
-                    <div class="mt-5 flex flex-col gap-2">
+                    <div class="dj-profile-actions mt-5 flex flex-col gap-2">
                     <?php if (!empty($socialLinks)): ?>
                         <div class="grid grid-cols-2 gap-2">
                         <?php foreach ($socialLinks as $social): ?>
@@ -190,9 +343,9 @@ $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
                     </div>
                 </aside>
 
-                <div class="p-5 md:p-7">
-                    <div class="mb-6 rounded-xl border border-white/10 bg-neutral-950/60 p-5">
-                        <div class="mb-2 flex items-center justify-between gap-3">
+                <div class="dj-profile-content p-5 md:p-7">
+                    <div class="dj-profile-bio-card mb-6 rounded-xl border border-white/10 bg-neutral-950/60 p-5">
+                        <div class="dj-profile-bio-heading mb-2 flex items-center justify-between gap-3">
                             <h2 class="text-lg font-black">Perfil del DJ</h2>
                             <?php if ($isPro): ?>
                                 <span class="text-xs font-semibold text-neutral-400"><?php echo number_format($visits); ?> visitas</span>
@@ -206,7 +359,7 @@ $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
                     <?php endif; ?>
                     </div>
 
-                    <div class="mb-4 flex items-center justify-between gap-3">
+                    <div class="dj-profile-section-head mb-4 flex items-center justify-between gap-3">
                         <h2 class="text-xl font-black">Mixes disponibles</h2>
                         <?php if (!$isPro): ?><span class="text-xs text-neutral-500">Vista limitada</span><?php endif; ?>
                     </div>
@@ -219,14 +372,14 @@ $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
                     <?php endif; ?>
                     <?php foreach ($mixes as $mix): ?>
                     <article class="mix-row flex items-center gap-3 rounded-xl border border-white/10 bg-neutral-950/70 p-3 transition hover:border-red-500/70">
-                        <div class="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-neutral-800 md:h-20 md:w-20">
+                        <div class="mix-row-cover h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-neutral-800 md:h-20 md:w-20">
                             <img src="<?php echo htmlspecialchars($mix['cover'] ?: 'assets/img/default-cover.jpg'); ?>" class="h-full w-full object-cover transition duration-300" onerror="this.src='assets/img/default-cover.jpg'">
                         </div>
                         <div class="min-w-0 flex-1">
-                            <h3 class="truncate font-bold"><?php echo htmlspecialchars($mix['title']); ?></h3>
-                            <p class="mt-1 text-sm text-neutral-400"><?php echo htmlspecialchars($mix['genre']); ?><?php echo !empty($mix['duration']) ? ' / ' . htmlspecialchars($mix['duration']) : ''; ?></p>
+                            <h3 class="mix-row-title truncate font-bold"><?php echo htmlspecialchars($mix['title']); ?></h3>
+                            <p class="mix-row-meta mt-1 text-sm text-neutral-400"><?php echo htmlspecialchars($mix['genre']); ?><?php echo !empty($mix['duration']) ? ' / ' . htmlspecialchars($mix['duration']) : ''; ?></p>
                         </div>
-                        <div class="flex shrink-0 gap-2">
+                        <div class="mix-row-actions flex shrink-0 gap-2">
                             <a href="player/index.php?id=<?php echo (int)$mix['id']; ?>" class="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 hover:bg-red-700 transition" title="Reproducir"><i class="fas fa-play"></i></a>
                             <a href="api/download_mix.php?id=<?php echo (int)$mix['id']; ?>" class="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 transition" title="Descargar"><i class="fas fa-download"></i></a>
                         </div>

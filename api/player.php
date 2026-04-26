@@ -16,6 +16,11 @@ switch ($action) {
                             WHERE active = 1 
                             ORDER BY date DESC");
         $playlist = $stmt->fetchAll();
+        foreach ($playlist as &$track) {
+            $track['type'] = 'mix';
+            $track['url'] = cdn_audio_url($track['url'] ?? '');
+        }
+        unset($track);
         
         // Agregar videos a la playlist
         $stmt = $db->query("SELECT id, title, dj, url, cover, duration, 'video' as type 
@@ -46,6 +51,9 @@ switch ($action) {
         if ($track) {
             // Registrar reproducción
             updateStatistics($id, $type, 'play');
+            if ($type == 'mix') {
+                $track['url'] = cdn_audio_url($track['url'] ?? '');
+            }
             echo json_encode($track);
         } else {
             echo json_encode(['error' => 'Track no encontrado']);

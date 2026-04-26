@@ -16,6 +16,7 @@ $genres = $db->query("SELECT DISTINCT genre FROM mixes WHERE active = 1 ORDER BY
     <title>Todos los Mixes - Panda Truck Reloaded</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
     <style>.mix-card{transition:transform .3s;}.mix-card:hover{transform:translateY(-4px);}</style>
 </head>
 <body class="bg-neutral-950 text-white">
@@ -55,7 +56,7 @@ $genres = $db->query("SELECT DISTINCT genre FROM mixes WHERE active = 1 ORDER BY
                     <img src="<?php echo $mix['cover']??'assets/img/default-cover.jpg'; ?>" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition flex items-center justify-center gap-3">
                         <a href="player/index.php?id=<?php echo $mix['id']; ?>" class="w-12 h-12 rounded-full bg-primary flex items-center justify-center">▶</a>
-                        <a href="<?php echo $mix['url']; ?>" download class="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center">⬇️</a>
+                        <a href="api/download_mix.php?id=<?php echo (int)$mix['id']; ?>" class="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center">⬇️</a>
                     </div>
                     <div class="absolute top-2 right-2 px-2 py-1 rounded-full bg-black/70 text-xs"><?php echo $mix['duration']??'00:00'; ?></div>
                 </div>

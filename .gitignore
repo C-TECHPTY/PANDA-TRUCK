@@ -34,7 +34,13 @@ uploads/
 # Backups and generated archives
 BACKUP2/
 backups/
+_backup_migracion/
+build/
 *.zip
+*.sql.gz
+*.sql.zip
+*_backup_*.sql
+*dump*.sql
 * - copia.php
 *REPORTE COMPLETO*
 *MANUAL DE USUARIO*

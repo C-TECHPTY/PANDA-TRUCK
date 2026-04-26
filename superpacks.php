@@ -11,6 +11,7 @@ trackVisit('superpacks');
     <title>Todos los Super Packs - Panda Truck Reloaded</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
     <style>
         :root { --primary: #e1261d; }
         .bg-primary { background-color: var(--primary); }

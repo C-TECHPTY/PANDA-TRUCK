@@ -1,41 +1,97 @@
 # Renovaciones DJ PRO
 
-## Estados
+Plan activo:
 
-- `pending`: sin pago activo confirmado.
-- `active`: PRO vigente.
-- `expired`: vencido.
-- `cancelled`: cancelado manualmente.
+- DJ PRO: USD 10 mensual.
 
-Plan especial:
+## Campos Usados
 
-- `founder`: DJ fundador, sin pago mensual ni vencimiento.
+Tabla `djs`:
 
-## Activar PRO
+- `plan`: `free`, `pro`, `founder`
+- `subscription_status`: `active`, `expired`, `pending`, `cancelled`
+- `subscription_start`
+- `subscription_end`
+- `email`
+- `instagram`
+- `biography`
+- `profile_photo`
+- `slug`
+- `is_featured`
+- `priority`
+- `last_notice_7_days`
+- `last_notice_3_days`
+- `last_notice_1_day`
+- `last_notice_expired`
 
-Al activar:
+Tabla `dj_payments`:
 
-- `plan = pro`
-- `subscription_status = active`
-- `subscription_start = NOW()`
-- `subscription_end = NOW() + 30 dias`
+- `dj_id`
+- `amount`
+- `payment_method`
+- `reference_number`
+- `proof_image`
+- `notes`
+- `payment_date`
+- `created_by`
 
-## Extender 30 dias
+## Administracion
 
-- Si el DJ sigue activo y `subscription_end` es futuro, sumar 30 dias desde `subscription_end`.
-- Si ya vencio o no tiene fecha, sumar 30 dias desde hoy.
+Entrar a:
 
-## Avisos automaticos
+```text
+/admin/dj_pro.php
+```
 
-El cron `cron/check_subscriptions.php` debe ejecutarse diario.
+Acciones disponibles:
 
-El cron ignora DJs con `plan = founder`.
+- Activar PRO por 30 dias.
+- Extender 30 dias.
+- Registrar pago Yappy.
+- Ver vencimiento y dias restantes.
+- Marcar como Fundador.
+- Pausar/cancelar.
+- Volver a FREE sin borrar datos.
+- Definir destacado y prioridad.
 
-Avisos:
+## Comportamiento al Vencer
+
+Cuando un DJ PRO vence:
+
+- No se borra el DJ.
+- No se borran sus mixes.
+- El perfil queda en modo basico.
+- Se limita la visibilidad de mixes.
+- Se ocultan beneficios avanzados.
+- Se quita destacado si el admin lo define.
+
+## Cron en Namecheap/cPanel
+
+Comando recomendado:
+
+```bash
+php /home/USUARIO/public_html/cron/check_subscriptions.php
+```
+
+Frecuencia sugerida:
+
+```text
+1 vez al dia, por ejemplo 08:00 AM.
+```
+
+## Avisos
+
+El cron intenta enviar avisos:
 
 - 7 dias antes.
 - 3 dias antes.
 - 1 dia antes.
 - Dia vencido.
 
-Los campos `last_notice_*` evitan correos duplicados.
+No duplica avisos porque guarda fecha en columnas `last_notice_*`.
+
+## SMTP
+
+Actualmente `cron/check_subscriptions.php` usa `mail()` nativo para maxima compatibilidad sin librerias.
+
+Si el hosting bloquea `mail()`, configurar SMTP en `includes/config.local.php` y adaptar el envio a PHPMailer o al proveedor SMTP del dominio. No subir claves SMTP al repositorio.

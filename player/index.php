@@ -378,7 +378,7 @@ if (!$current_mix && count($all_mixes) > 0) {
                             <?php foreach ($all_mixes as $index => $mix): ?>
                             <div class="playlist-item p-2 sm:p-3 hover:bg-neutral-800 transition cursor-pointer <?php echo ($current_mix && $current_mix['id'] == $mix['id']) ? 'active' : ''; ?>" 
                                  data-id="<?php echo $mix['id']; ?>"
-                                 data-url="<?php echo htmlspecialchars($mix['url']); ?>"
+                                 data-url="<?php echo htmlspecialchars(cdn_audio_url($mix['url'])); ?>"
                                  data-title="<?php echo htmlspecialchars($mix['title']); ?>"
                                  data-dj="<?php echo htmlspecialchars($mix['dj']); ?>"
                                  data-cover="<?php echo htmlspecialchars($mix['cover']); ?>"
@@ -468,7 +468,7 @@ if (!$current_mix && count($all_mixes) > 0) {
                 'id' => $mix['id'],
                 'title' => $mix['title'],
                 'dj' => $mix['dj'],
-                'url' => $mix['url'],
+                'url' => cdn_audio_url($mix['url']),
                 'cover' => $mix['cover'] ?? '../assets/img/default-cover.jpg',
                 'duration' => $mix['duration'] ?? '00:00',
                 'genre' => $mix['genre'],

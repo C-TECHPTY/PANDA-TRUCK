@@ -30,10 +30,23 @@ define('SITE_DESCRIPTION', $configValue('SITE_DESCRIPTION', 'La casa de los DJs 
 define('SITE_LOGO', $configValue('SITE_LOGO', 'assets/img/logo.png'));
 define('FOOTER_TEXT', $configValue('FOOTER_TEXT', 'Panda Truck Reloaded - La casa de los DJs en Panama'));
 
+// CDN and mail configuration. Keep real values in config.local.php or
+// environment variables on the hosting account, never in Git.
+define('CDN_BASE_URL', rtrim($configValue('CDN_BASE_URL', 'https://panda-truck.b-cdn.net/'), '/') . '/');
+define('BACKBLAZE_AUDIO_ORIGIN', rtrim($configValue('BACKBLAZE_AUDIO_ORIGIN', 'https://f005.backblazeb2.com/file/'), '/') . '/');
+define('CDN_AUDIO_ENABLED', filter_var($configValue('CDN_AUDIO_ENABLED', true), FILTER_VALIDATE_BOOLEAN));
+define('SMTP_HOST', $configValue('SMTP_HOST', ''));
+define('SMTP_USER', $configValue('SMTP_USER', ''));
+define('SMTP_PASS', $configValue('SMTP_PASS', ''));
+define('SMTP_PORT', (int)$configValue('SMTP_PORT', 587));
+define('SMTP_SECURE', $configValue('SMTP_SECURE', 'tls'));
+
 // DJ guide configuration.
 define('GUIA_TITLE', $configValue('GUIA_TITLE', 'Guia para DJs - Panda Truck'));
 define('GUIA_DESCRIPTION', $configValue('GUIA_DESCRIPTION', 'Guia completa para DJs que quieren publicar sus mixes'));
 define('GUIA_WHATSAPP', $configValue('GUIA_WHATSAPP', '50762115209'));
+
+require_once __DIR__ . '/cdn.php';
 
 function getDB() {
     try {
@@ -44,5 +57,9 @@ function getDB() {
     } catch (PDOException $e) {
         die("Error de conexion: " . $e->getMessage());
     }
+}
+
+function resolveMediaUrl($path) {
+    return cdn_audio_url($path);
 }
 ?>

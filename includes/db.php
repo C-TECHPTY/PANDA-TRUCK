@@ -7,6 +7,25 @@ class Database {
     private $password = "";
     public $conn;
 
+    public function __construct() {
+        $localConfigFile = __DIR__ . '/config.local.php';
+        $localConfig = file_exists($localConfigFile) ? require $localConfigFile : [];
+
+        $configValue = function ($key, $default) use ($localConfig) {
+            if (array_key_exists($key, $localConfig)) {
+                return $localConfig[$key];
+            }
+
+            $value = getenv($key);
+            return $value !== false ? $value : $default;
+        };
+
+        $this->host = $configValue('DB_HOST', $this->host);
+        $this->db_name = $configValue('DB_NAME', $this->db_name);
+        $this->username = $configValue('DB_USER', $this->username);
+        $this->password = $configValue('DB_PASS', $this->password);
+    }
+
     public function getConnection() {
         $this->conn = null;
         try {

@@ -156,7 +156,7 @@ $stats = $stmt->fetch();
                     <div class="flex items-center gap-4 flex-1 min-w-0">
                         <input type="checkbox" class="mix-checkbox checkbox-select" 
                                data-id="<?php echo $mix['id']; ?>"
-                               data-url="<?php echo htmlspecialchars($mix['url']); ?>"
+                               data-url="<?php echo htmlspecialchars(cdn_audio_url($mix['url'])); ?>"
                                data-title="<?php echo htmlspecialchars($mix['title']); ?>"
                                data-dj="<?php echo htmlspecialchars($mix['dj']); ?>"
                                data-cover="<?php echo htmlspecialchars($mix['cover'] ?? ''); ?>"
@@ -184,7 +184,7 @@ $stats = $stmt->fetch();
                         </a>
                         <button class="single-download-btn px-3 py-2 bg-neutral-700 rounded-lg hover:bg-primary transition"
                                 data-id="<?php echo $mix['id']; ?>"
-                                data-url="<?php echo htmlspecialchars($mix['url']); ?>"
+                                data-url="<?php echo htmlspecialchars(cdn_audio_url($mix['url'])); ?>"
                                 data-title="<?php echo htmlspecialchars($mix['title']); ?>"
                                 data-dj="<?php echo htmlspecialchars($mix['dj']); ?>">
                             <i class="fas fa-download"></i>
@@ -240,12 +240,10 @@ $stats = $stmt->fetch();
         
         function downloadMix(url, mixId, title, dj) {
             const link = document.createElement('a');
-            link.href = url;
-            link.download = `${title} - ${dj}.mp3`;
+            link.href = `../api/download_mix.php?id=${mixId}`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            updateDownloadCount(mixId);
             showToast(`📥 Descargando: ${title}`, false, 2000);
         }
         

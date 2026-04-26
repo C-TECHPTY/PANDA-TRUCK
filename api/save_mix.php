@@ -43,7 +43,8 @@ try {
     $stmt->bindValue(':title', $data['title'] ?? 'Sin título');
     $stmt->bindValue(':dj', $data['dj'] ?? 'Sin DJ');
     $stmt->bindValue(':genre', $data['genre'] ?? 'Sin género');
-    $stmt->bindValue(':url', $data['url'] ?? '');
+    $audioPath = cdn_normalize_audio_path($data['url'] ?? '');
+    $stmt->bindValue(':url', $audioPath);
     $stmt->bindValue(':cover', $data['cover'] ?? '');
     $stmt->bindValue(':duration', $data['duration'] ?? '');
     $stmt->bindValue(':sizeMB', $data['sizeMB'] ?? 0);
