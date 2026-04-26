@@ -19,10 +19,11 @@ if (!$dj) {
     die('DJ no encontrado');
 }
 
-$isPro = ($dj['plan'] ?? 'free') === 'pro'
+$isFounder = ($dj['plan'] ?? 'free') === 'founder' && ($dj['subscription_status'] ?? '') === 'active';
+$isPro = $isFounder || (($dj['plan'] ?? 'free') === 'pro'
     && ($dj['subscription_status'] ?? '') === 'active'
     && !empty($dj['subscription_end'])
-    && strtotime($dj['subscription_end']) >= time();
+    && strtotime($dj['subscription_end']) >= time());
 
 trackVisit('dj_profile', (int)$dj['id'], (int)$dj['id']);
 
@@ -65,7 +66,9 @@ $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
         <section class="mt-6 grid md:grid-cols-[260px_1fr] gap-6 items-start">
             <div class="bg-neutral-900 rounded-lg p-4">
                 <img src="<?php echo htmlspecialchars($photo); ?>" class="w-full aspect-square object-cover rounded-lg mb-4" onerror="this.src='assets/img/default-avatar.jpg'">
-                <?php if ($isPro): ?>
+                <?php if ($isFounder): ?>
+                    <div class="inline-flex items-center gap-2 bg-amber-600 px-3 py-1 rounded-full text-sm font-bold mb-3"><i class="fas fa-star"></i> DJ FUNDADOR</div>
+                <?php elseif ($isPro): ?>
                     <div class="inline-flex items-center gap-2 bg-red-600 px-3 py-1 rounded-full text-sm font-bold mb-3"><i class="fas fa-crown"></i> DJ PRO</div>
                 <?php else: ?>
                     <div class="inline-flex items-center gap-2 bg-neutral-700 px-3 py-1 rounded-full text-sm mb-3">Modo basico</div>

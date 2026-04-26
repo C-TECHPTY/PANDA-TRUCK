@@ -7,6 +7,10 @@
 - `expired`: vencido.
 - `cancelled`: cancelado manualmente.
 
+Plan especial:
+
+- `founder`: DJ fundador, sin pago mensual ni vencimiento.
+
 ## Activar PRO
 
 Al activar:
@@ -24,6 +28,8 @@ Al activar:
 ## Avisos automaticos
 
 El cron `cron/check_subscriptions.php` debe ejecutarse diario.
+
+El cron ignora DJs con `plan = founder`.
 
 Avisos:
 

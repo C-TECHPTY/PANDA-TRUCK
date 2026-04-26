@@ -30,6 +30,7 @@ $totals = $db->query("SELECT
     (SELECT COUNT(*) FROM site_visits WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')) AS month_visits,
     (SELECT COUNT(*) FROM djs WHERE active = 1) AS total_djs,
     (SELECT COUNT(*) FROM djs WHERE plan = 'pro' AND subscription_status = 'active' AND subscription_end >= NOW()) AS pro_active,
+    (SELECT COUNT(*) FROM djs WHERE plan = 'founder' AND subscription_status = 'active') AS founders,
     (SELECT COUNT(*) FROM djs WHERE subscription_status = 'expired' OR (plan = 'pro' AND subscription_end < NOW())) AS expired_djs,
     (SELECT COALESCE(SUM(amount), 0) FROM dj_payments) AS yappy_income,
     (SELECT COALESCE(SUM(plays), 0) FROM statistics) AS total_plays")->fetch(PDO::FETCH_ASSOC);
@@ -65,6 +66,7 @@ addPdfLine($stream, $y, 'Total de visitas: ' . number_format((int)$totals['total
 addPdfLine($stream, $y, 'Visitas del mes: ' . number_format((int)$totals['month_visits']));
 addPdfLine($stream, $y, 'DJs registrados: ' . number_format((int)$totals['total_djs']));
 addPdfLine($stream, $y, 'DJs PRO activos: ' . number_format((int)$totals['pro_active']));
+addPdfLine($stream, $y, 'DJs fundadores: ' . number_format((int)$totals['founders']));
 addPdfLine($stream, $y, 'DJs vencidos: ' . number_format((int)$totals['expired_djs']));
 addPdfLine($stream, $y, 'Ingresos registrados por Yappy: $' . number_format((float)$totals['yappy_income'], 2));
 addPdfLine($stream, $y, 'Total de reproducciones: ' . number_format((int)$totals['total_plays']));

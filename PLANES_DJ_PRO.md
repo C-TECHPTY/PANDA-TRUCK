@@ -2,6 +2,12 @@
 
 Plan unico inicial: **DJ PRO - $10 mensual**.
 
+Tambien existe un estado especial para los DJs actuales:
+
+**DJ FUNDADOR**
+
+Los fundadores tienen beneficios tipo PRO sin pago mensual y sin fecha de vencimiento. Sirve para respetar a los DJs que ya estaban en Panda Truck antes del lanzamiento comercial.
+
 ## Beneficios
 
 - Perfil profesional personalizado.
@@ -39,5 +45,13 @@ Un DJ `pro` activo:
 - Muestra estadisticas.
 - Muestra Instagram.
 - Tiene boton de WhatsApp/compartir.
+
+Un DJ `founder`:
+
+- Mantiene beneficios PRO.
+- No tiene vencimiento mensual.
+- No recibe avisos de pago.
+- Puede mostrar insignia de fundador.
+- Se usa para DJs actuales de la plataforma.
 
 Los pagos se registran manualmente por Yappy en `dj_payments`.

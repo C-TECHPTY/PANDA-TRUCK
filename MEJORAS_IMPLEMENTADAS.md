@@ -13,6 +13,7 @@ Esta entrega mantiene el sistema actual y agrega componentes nuevos:
 - Pagina publica `DJ PRO`.
 - Perfil publico por slug.
 - Panel administrativo independiente para membresias DJ PRO.
+- Plan especial `founder` para DJs actuales sin vencimiento mensual.
 - Cron de avisos de vencimiento.
 - Reporte PDF basico para socios.
 - Documentacion de planes, estadisticas, renovaciones, CDN y seguridad.
@@ -53,6 +54,10 @@ Esta entrega mantiene el sistema actual y agrega componentes nuevos:
 
 - `migrations/upgrade_dj_pro_stats.sql`
   - Migracion SQL requerida.
+  - Ahora soporta `plan = founder` y marca los DJs existentes activos como fundadores.
+
+- `migrations/mark_existing_djs_founders.sql`
+  - Script opcional para marcar DJs existentes como fundadores si la migracion principal ya fue importada antes.
 
 - `includes/track_visit.php`
   - Helper para registrar visitas publicas con IP hasheada y deduplicacion.

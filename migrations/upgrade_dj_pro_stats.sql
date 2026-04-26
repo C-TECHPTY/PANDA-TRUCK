@@ -5,7 +5,7 @@
 SET FOREIGN_KEY_CHECKS=0;
 
 ALTER TABLE `djs`
-  ADD COLUMN IF NOT EXISTS `plan` ENUM('free','pro') NOT NULL DEFAULT 'free' AFTER `active`,
+  ADD COLUMN IF NOT EXISTS `plan` ENUM('free','pro','founder') NOT NULL DEFAULT 'free' AFTER `active`,
   ADD COLUMN IF NOT EXISTS `subscription_status` ENUM('active','expired','pending','cancelled') NOT NULL DEFAULT 'pending' AFTER `plan`,
   ADD COLUMN IF NOT EXISTS `subscription_start` DATETIME NULL AFTER `subscription_status`,
   ADD COLUMN IF NOT EXISTS `subscription_end` DATETIME NULL AFTER `subscription_start`,
@@ -21,12 +21,26 @@ ALTER TABLE `djs`
   ADD COLUMN IF NOT EXISTS `last_notice_1_day` DATETIME NULL AFTER `last_notice_3_days`,
   ADD COLUMN IF NOT EXISTS `last_notice_expired` DATETIME NULL AFTER `last_notice_1_day`;
 
+ALTER TABLE `djs`
+  MODIFY COLUMN `plan` ENUM('free','pro','founder') NOT NULL DEFAULT 'free';
+
 UPDATE `djs`
 SET
   `biography` = COALESCE(NULLIF(`biography`, ''), `bio`),
   `profile_photo` = COALESCE(NULLIF(`profile_photo`, ''), `avatar`),
   `slug` = COALESCE(NULLIF(`slug`, ''), LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(`name`, '@', ''), ' ', '-'), '_', '-'), '.', ''), '--', '-')))
 WHERE `slug` IS NULL OR `slug` = '' OR `biography` IS NULL OR `profile_photo` IS NULL;
+
+-- Los DJs que ya existen antes de lanzar membresias pueden marcarse como fundadores.
+-- Tienen beneficios PRO sin vencimiento y no se les envia aviso de pago mensual.
+UPDATE `djs`
+SET
+  `plan` = 'founder',
+  `subscription_status` = 'active',
+  `subscription_start` = COALESCE(`subscription_start`, NOW()),
+  `subscription_end` = NULL
+WHERE `active` = 1
+  AND (`plan` IS NULL OR `plan` = 'free');
 
 CREATE TABLE IF NOT EXISTS `site_visits` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

@@ -57,6 +57,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $db->prepare("UPDATE djs SET plan = 'free', subscription_status = 'cancelled', is_featured = 0, priority = 0 WHERE id = :id");
             $stmt->execute([':id' => $djId]);
             $message = 'DJ marcado como FREE.';
+        } elseif ($action === 'founder') {
+            $stmt = $db->prepare("UPDATE djs
+                                  SET plan = 'founder',
+                                      subscription_status = 'active',
+                                      subscription_start = COALESCE(subscription_start, NOW()),
+                                      subscription_end = NULL
+                                  WHERE id = :id");
+            $stmt->execute([':id' => $djId]);
+            $message = 'DJ marcado como Fundador.';
         } elseif ($action === 'pause') {
             $stmt = $db->prepare("UPDATE djs SET subscription_status = 'cancelled', is_featured = 0 WHERE id = :id");
             $stmt->execute([':id' => $djId]);
@@ -101,6 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $summary = $db->query("SELECT
     COUNT(*) AS total_djs,
     SUM(plan = 'pro' AND subscription_status = 'active' AND subscription_end >= NOW()) AS pro_active,
+    SUM(plan = 'founder' AND subscription_status = 'active') AS founders,
     SUM(subscription_status = 'expired' OR (plan = 'pro' AND subscription_end < NOW())) AS expired,
     COALESCE((SELECT SUM(amount) FROM dj_payments), 0) AS yappy_total,
     COALESCE((SELECT COUNT(*) FROM site_visits), 0) AS total_visits
@@ -143,7 +153,7 @@ $djs = $db->query("SELECT
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             <div class="bg-neutral-900 rounded p-4"><p class="text-xs text-neutral-400">DJs</p><p class="text-2xl font-bold"><?php echo (int)$summary['total_djs']; ?></p></div>
             <div class="bg-neutral-900 rounded p-4"><p class="text-xs text-neutral-400">PRO activos</p><p class="text-2xl font-bold text-green-400"><?php echo (int)$summary['pro_active']; ?></p></div>
-            <div class="bg-neutral-900 rounded p-4"><p class="text-xs text-neutral-400">Vencidos</p><p class="text-2xl font-bold text-yellow-400"><?php echo (int)$summary['expired']; ?></p></div>
+            <div class="bg-neutral-900 rounded p-4"><p class="text-xs text-neutral-400">Fundadores</p><p class="text-2xl font-bold text-amber-400"><?php echo (int)$summary['founders']; ?></p></div>
             <div class="bg-neutral-900 rounded p-4"><p class="text-xs text-neutral-400">Yappy</p><p class="text-2xl font-bold">$<?php echo number_format((float)$summary['yappy_total'], 2); ?></p></div>
             <div class="bg-neutral-900 rounded p-4"><p class="text-xs text-neutral-400">Visitas</p><p class="text-2xl font-bold"><?php echo number_format((int)$summary['total_visits']); ?></p></div>
         </div>
@@ -193,6 +203,7 @@ $djs = $db->query("SELECT
                         <td class="p-3">
                             <div class="flex flex-wrap gap-1 mb-2">
                                 <form method="post"><input type="hidden" name="dj_id" value="<?php echo (int)$dj['id']; ?>"><input type="hidden" name="action" value="activate"><button class="px-2 py-1 rounded bg-green-700 text-xs">Activar PRO</button></form>
+                                <form method="post"><input type="hidden" name="dj_id" value="<?php echo (int)$dj['id']; ?>"><input type="hidden" name="action" value="founder"><button class="px-2 py-1 rounded bg-amber-700 text-xs">Fundador</button></form>
                                 <form method="post"><input type="hidden" name="dj_id" value="<?php echo (int)$dj['id']; ?>"><input type="hidden" name="action" value="extend"><button class="px-2 py-1 rounded bg-blue-700 text-xs">+30 dias</button></form>
                                 <form method="post"><input type="hidden" name="dj_id" value="<?php echo (int)$dj['id']; ?>"><input type="hidden" name="action" value="pause"><button class="px-2 py-1 rounded bg-yellow-700 text-xs">Pausar</button></form>
                                 <form method="post"><input type="hidden" name="dj_id" value="<?php echo (int)$dj['id']; ?>"><input type="hidden" name="action" value="free"><button class="px-2 py-1 rounded bg-neutral-700 text-xs">FREE</button></form>
