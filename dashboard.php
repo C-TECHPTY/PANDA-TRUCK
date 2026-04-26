@@ -5,6 +5,7 @@ ini_set('display_errors', 1);
 
 require_once 'includes/config.php';
 require_once 'includes/auth.php';
+require_once 'includes/track_visit.php';
 
 $auth->requireLogin();
 
@@ -61,6 +62,12 @@ if (!$hero) {
 
 // Estadísticas por tipo (YA ESTÁ BIEN - usa statistics)
 $stats_data = $db->query("SELECT item_type, SUM(plays) as total_plays, SUM(downloads) as total_downloads FROM statistics GROUP BY item_type")->fetchAll();
+$total_plays_all = 0;
+$total_downloads_all = 0;
+foreach ($stats_data as $stat) {
+    $total_plays_all += (int)($stat['total_plays'] ?? 0);
+    $total_downloads_all += (int)($stat['total_downloads'] ?? 0);
+}
 
 // Top 10 mixes más descargados (CORREGIDO - usa statistics)
 $top_mixes = $db->query("
@@ -95,6 +102,85 @@ $top_djs_stats = $db->query("
     ORDER BY total_downloads DESC
     LIMIT 5
 ")->fetchAll();
+
+// Estadisticas de visitas publicas. Se mantienen separadas de statistics
+// para no mezclar visitas con plays/downloads.
+$visit_stats = [
+    'total' => 0,
+    'today' => 0,
+    'week' => 0,
+    'month' => 0,
+];
+$top_visit_pages = [];
+$top_visit_djs = [];
+$visit_page_types = [];
+$visit_devices = [];
+
+try {
+    if (ensureSiteVisitsTable($db)) {
+        $visit_stats = $db->query("
+            SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN created_at >= CURDATE() THEN 1 ELSE 0 END) AS today,
+                SUM(CASE WHEN created_at >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY) THEN 1 ELSE 0 END) AS week,
+                SUM(CASE WHEN created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01') THEN 1 ELSE 0 END) AS month
+            FROM site_visits
+        ")->fetch(PDO::FETCH_ASSOC) ?: $visit_stats;
+
+        $top_visit_pages = $db->query("
+            SELECT
+                page_type,
+                page_url,
+                COUNT(*) AS visits,
+                MAX(created_at) AS last_visit
+            FROM site_visits
+            GROUP BY page_type, page_url
+            ORDER BY visits DESC, last_visit DESC
+            LIMIT 10
+        ")->fetchAll();
+
+        $top_visit_djs = $db->query("
+            SELECT
+                d.id,
+                d.name,
+                d.avatar,
+                COUNT(*) AS visits,
+                MAX(sv.created_at) AS last_visit
+            FROM site_visits sv
+            INNER JOIN djs d ON d.id = sv.dj_id
+            WHERE sv.dj_id IS NOT NULL
+            GROUP BY d.id, d.name, d.avatar
+            ORDER BY visits DESC, last_visit DESC
+            LIMIT 10
+        ")->fetchAll();
+
+        $visit_page_types = $db->query("
+            SELECT page_type, COUNT(*) AS visits
+            FROM site_visits
+            GROUP BY page_type
+            ORDER BY visits DESC
+            LIMIT 10
+        ")->fetchAll();
+
+        $visit_devices = $db->query("
+            SELECT COALESCE(NULLIF(device_type, ''), 'desconocido') AS device_type, COUNT(*) AS visits
+            FROM site_visits
+            GROUP BY COALESCE(NULLIF(device_type, ''), 'desconocido')
+            ORDER BY visits DESC
+        ")->fetchAll();
+    }
+} catch (Throwable $e) {
+    $visit_stats = [
+        'total' => 0,
+        'today' => 0,
+        'week' => 0,
+        'month' => 0,
+    ];
+    $top_visit_pages = [];
+    $top_visit_djs = [];
+    $visit_page_types = [];
+    $visit_devices = [];
+}
 
 // Usuarios
 $users = ($user_role === 'superadmin') ? $db->query("SELECT * FROM users ORDER BY id DESC")->fetchAll() : [];
@@ -691,6 +777,10 @@ $maintenance_mode = $settings['maintenance_mode'] ?? 0;
                     <div class="stat-card"><div><p class="stat-label">DJs Activos</p><p class="stat-value"><?php echo count($djs); ?></p></div></div>
                     <div class="stat-card"><div><p class="stat-label">Descargas</p><p class="stat-value"><?php echo number_format($system_stats['total_downloads']); ?></p></div></div>
                     <div class="stat-card"><div><p class="stat-label">Actividad Hoy</p><p class="stat-value"><?php echo $system_stats['activity_today']; ?></p></div></div>
+                    <div class="stat-card"><div><p class="stat-label">Visitas Totales</p><p class="stat-value"><?php echo number_format((int)($visit_stats['total'] ?? 0)); ?></p></div></div>
+                    <div class="stat-card"><div><p class="stat-label">Visitas Hoy</p><p class="stat-value"><?php echo number_format((int)($visit_stats['today'] ?? 0)); ?></p></div></div>
+                    <div class="stat-card"><div><p class="stat-label">Visitas Semana</p><p class="stat-value"><?php echo number_format((int)($visit_stats['week'] ?? 0)); ?></p></div></div>
+                    <div class="stat-card"><div><p class="stat-label">Visitas Mes</p><p class="stat-value"><?php echo number_format((int)($visit_stats['month'] ?? 0)); ?></p></div></div>
                 </div>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
@@ -698,6 +788,49 @@ $maintenance_mode = $settings['maintenance_mode'] ?? 0;
                     <div class="bg-neutral-900 rounded-xl p-4"><h3 class="text-lg font-semibold mb-3">🏆 Top 5 DJs más Descargados</h3><div class="space-y-2"><?php foreach ($top_djs_stats as $dj): ?><div class="flex justify-between items-center p-2 hover:bg-neutral-800 rounded"><div><p class="font-medium text-sm"><?php echo htmlspecialchars($dj['dj']); ?></p><p class="text-xs text-neutral-500"><?php echo $dj['total_mixes']; ?> mixes</p></div><div class="text-right"><p class="text-primary font-bold"><?php echo number_format($dj['total_downloads']); ?></p></div></div><?php endforeach; ?></div></div>
                 </div>
                 
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                    <div class="bg-neutral-900 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold mb-3">Páginas más visitadas</h3>
+                        <div class="space-y-2">
+                            <?php if (empty($top_visit_pages)): ?>
+                            <p class="text-sm text-neutral-500">Aún no hay visitas registradas.</p>
+                            <?php else: ?>
+                            <?php foreach ($top_visit_pages as $page): ?>
+                            <div class="flex justify-between items-center p-2 hover:bg-neutral-800 rounded gap-3">
+                                <div class="min-w-0">
+                                    <p class="font-medium text-sm truncate"><?php echo htmlspecialchars($page['page_type']); ?></p>
+                                    <p class="text-xs text-neutral-500 truncate"><?php echo htmlspecialchars($page['page_url']); ?></p>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <p class="text-primary font-bold"><?php echo number_format((int)$page['visits']); ?></p>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="bg-neutral-900 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold mb-3">DJs más visitados</h3>
+                        <div class="space-y-2">
+                            <?php if (empty($top_visit_djs)): ?>
+                            <p class="text-sm text-neutral-500">Aún no hay visitas a perfiles de DJs.</p>
+                            <?php else: ?>
+                            <?php foreach ($top_visit_djs as $dj_visit): ?>
+                            <div class="flex justify-between items-center p-2 hover:bg-neutral-800 rounded gap-3">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <img src="<?php echo htmlspecialchars($dj_visit['avatar'] ?: 'assets/img/default-avatar.jpg'); ?>" class="thumbnail rounded-full" onerror="this.src='assets/img/default-avatar.jpg'">
+                                    <p class="font-medium text-sm truncate"><?php echo htmlspecialchars($dj_visit['name']); ?></p>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <p class="text-primary font-bold"><?php echo number_format((int)$dj_visit['visits']); ?></p>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div class="bg-neutral-900 rounded-xl p-4"><h3 class="text-lg font-semibold mb-3">Usuarios por Rol</h3><canvas id="rolesChart" height="200"></canvas></div>
                     <div class="bg-neutral-900 rounded-xl p-4"><h3 class="text-lg font-semibold mb-3">Actividad Reciente</h3><div class="space-y-2 max-h-64 overflow-y-auto"><?php foreach (array_slice($activity_logs, 0, 10) as $log): ?><div class="flex items-center gap-2 text-sm"><div class="w-6 h-6 rounded-full bg-neutral-800 flex items-center justify-center"><i class="fas fa-user text-neutral-500 text-xs"></i></div><div class="flex-1"><p class="text-neutral-300 text-xs"><?php echo htmlspecialchars($log['action']); ?></p><p class="text-xs text-neutral-500"><?php echo htmlspecialchars($log['username'] ?? 'Sistema'); ?> • <?php echo date('d/m/Y H:i', strtotime($log['created_at'])); ?></p></div></div><?php endforeach; ?></div></div>
@@ -863,7 +996,99 @@ $maintenance_mode = $settings['maintenance_mode'] ?? 0;
             <!-- Estadísticas Section -->
             <div id="stats-section" class="section-content hidden">
                 <h1 class="text-xl md:text-2xl font-bold mb-4">Estadísticas Avanzadas</h1>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="stats-grid">
+                    <div class="stat-card"><p class="stat-label">Plays Totales</p><p class="stat-value"><?php echo number_format($total_plays_all); ?></p></div>
+                    <div class="stat-card"><p class="stat-label">Descargas Totales</p><p class="stat-value"><?php echo number_format($total_downloads_all); ?></p></div>
+                    <div class="stat-card"><p class="stat-label">Visitas Totales</p><p class="stat-value"><?php echo number_format((int)($visit_stats['total'] ?? 0)); ?></p></div>
+                    <div class="stat-card"><p class="stat-label">Visitas Hoy</p><p class="stat-value"><?php echo number_format((int)($visit_stats['today'] ?? 0)); ?></p></div>
+                    <div class="stat-card"><p class="stat-label">Visitas Semana</p><p class="stat-value"><?php echo number_format((int)($visit_stats['week'] ?? 0)); ?></p></div>
+                    <div class="stat-card"><p class="stat-label">Visitas Mes</p><p class="stat-value"><?php echo number_format((int)($visit_stats['month'] ?? 0)); ?></p></div>
+                    <div class="stat-card"><p class="stat-label">Mixes Activos</p><p class="stat-value"><?php echo count($mixes); ?></p></div>
+                    <div class="stat-card"><p class="stat-label">DJs Activos</p><p class="stat-value"><?php echo count($djs); ?></p></div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                    <div class="bg-neutral-900 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold mb-3">Plays y Descargas por Tipo</h3>
+                        <div class="space-y-2">
+                            <?php if (empty($stats_data)): ?>
+                            <p class="text-sm text-neutral-500">Aún no hay estadísticas de plays o descargas.</p>
+                            <?php else: ?>
+                            <?php foreach ($stats_data as $stat): ?>
+                            <div class="flex justify-between items-center p-2 border-b border-neutral-800 gap-3">
+                                <span class="capitalize"><?php echo htmlspecialchars($stat['item_type']); ?>s</span>
+                                <span class="text-primary text-sm text-right"><?php echo number_format((int)$stat['total_plays']); ?> plays • <?php echo number_format((int)$stat['total_downloads']); ?> descargas</span>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="bg-neutral-900 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold mb-3">Visitas por Tipo de Página</h3>
+                        <div class="space-y-2">
+                            <?php if (empty($visit_page_types)): ?>
+                            <p class="text-sm text-neutral-500">Aún no hay visitas registradas.</p>
+                            <?php else: ?>
+                            <?php foreach ($visit_page_types as $page_type): ?>
+                            <div class="flex justify-between items-center p-2 border-b border-neutral-800">
+                                <span><?php echo htmlspecialchars($page_type['page_type']); ?></span>
+                                <span class="text-primary font-bold"><?php echo number_format((int)$page_type['visits']); ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+                    <div class="bg-neutral-900 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold mb-3">Dispositivos</h3>
+                        <div class="space-y-2">
+                            <?php if (empty($visit_devices)): ?>
+                            <p class="text-sm text-neutral-500">Sin datos de dispositivos.</p>
+                            <?php else: ?>
+                            <?php foreach ($visit_devices as $device): ?>
+                            <div class="flex justify-between p-2 border-b border-neutral-800">
+                                <span class="capitalize"><?php echo htmlspecialchars($device['device_type']); ?></span>
+                                <span class="text-primary font-bold"><?php echo number_format((int)$device['visits']); ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="bg-neutral-900 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold mb-3">Páginas más Visitadas</h3>
+                        <div class="space-y-2">
+                            <?php foreach (array_slice($top_visit_pages, 0, 5) as $page): ?>
+                            <div class="flex justify-between items-center p-2 hover:bg-neutral-800 rounded gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium truncate"><?php echo htmlspecialchars($page['page_type']); ?></p>
+                                    <p class="text-xs text-neutral-500 truncate"><?php echo htmlspecialchars($page['page_url']); ?></p>
+                                </div>
+                                <span class="text-primary font-bold shrink-0"><?php echo number_format((int)$page['visits']); ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php if (empty($top_visit_pages)): ?><p class="text-sm text-neutral-500">Sin páginas visitadas.</p><?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="bg-neutral-900 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold mb-3">DJs más Visitados</h3>
+                        <div class="space-y-2">
+                            <?php foreach (array_slice($top_visit_djs, 0, 5) as $dj_visit): ?>
+                            <div class="flex justify-between items-center p-2 hover:bg-neutral-800 rounded gap-3">
+                                <p class="text-sm font-medium truncate"><?php echo htmlspecialchars($dj_visit['name']); ?></p>
+                                <span class="text-primary font-bold shrink-0"><?php echo number_format((int)$dj_visit['visits']); ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php if (empty($top_visit_djs)): ?><p class="text-sm text-neutral-500">Sin visitas a DJs.</p><?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hidden">
                     <div class="bg-neutral-900 rounded-xl p-4"><h3 class="text-lg font-semibold mb-3">Estadísticas por Tipo</h3><?php foreach ($stats_data as $stat): ?><div class="flex justify-between p-2"><span class="capitalize"><?php echo $stat['item_type']; ?>s</span><span class="text-primary"><?php echo number_format($stat['total_plays']); ?> plays • <?php echo number_format($stat['total_downloads']); ?> descargas</span></div><?php endforeach; ?></div>
                     <div class="bg-neutral-900 rounded-xl p-4"><h3 class="text-lg font-semibold mb-3">Resumen General</h3><div class="space-y-2"><div class="flex justify-between p-2 border-b"><span>Total de Mixes:</span><span class="text-primary"><?php echo count($mixes); ?></span></div><div class="flex justify-between p-2 border-b"><span>Total de DJs:</span><span class="text-primary"><?php echo count($djs); ?></span></div><div class="flex justify-between p-2"><span>Descargas Totales:</span><span class="text-primary"><?php echo number_format($system_stats['total_downloads']); ?></span></div></div></div>
                 </div>
@@ -1057,6 +1282,61 @@ $maintenance_mode = $settings['maintenance_mode'] ?? 0;
         // ==================== CRUD DJS ====================
         async function deleteDJ(id){ if(confirm('¿Eliminar este DJ?')){ try{ const res=await fetch('api/delete_dj.php',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id}) }); const data=await res.json(); if(data.success){ showToast('DJ eliminado'); location.reload(); }else showToast(data.error,true); }catch(e){showToast('Error',true);} } }
         function openDJModal(data=null){ const isEdit=data?.id; const formHtml=`<div class="flex justify-between items-center mb-3"><h3 class="text-lg font-bold">${isEdit?'Editar DJ':'Agregar DJ'}</h3><button onclick="closeModal()" class="text-2xl hover:text-primary">&times;</button></div><form id="itemForm" class="space-y-3"><input type="hidden" name="id" value="${data?.id||''}"><div><label>Nombre *</label><input type="text" name="name" required value="${escapeHtml(data?.name||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Género</label><input type="text" name="genre" value="${escapeHtml(data?.genre||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Ciudad</label><input type="text" name="city" value="${escapeHtml(data?.city||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Biografía</label><textarea name="bio" rows="3" class="w-full p-2 bg-neutral-800 rounded">${escapeHtml(data?.bio||'')}</textarea></div><div><label>URL del Avatar</label><input type="url" name="avatar" value="${escapeHtml(data?.avatar||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label><input type="checkbox" name="active" value="1" ${data?.active!=0?'checked':''}> Activo</label></div><div class="flex gap-2 pt-2"><button type="button" onclick="closeModal()" class="flex-1 p-2 bg-neutral-700 rounded">Cancelar</button><button type="submit" class="flex-1 p-2 bg-primary rounded">Guardar</button></div></form>`; document.getElementById('modalContent').innerHTML=formHtml; document.getElementById('itemModal').classList.add('show'); document.getElementById('itemForm').addEventListener('submit',async(e)=>{ e.preventDefault(); const form=new FormData(e.target); const formData=Object.fromEntries(form); formData.active=form.has('active')?1:0; try{ const res=await fetch('api/save_dj.php',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) }); const result=await res.json(); if(result.success){ showToast('DJ guardado'); closeModal(); location.reload(); }else showToast(result.error,true); }catch(e){showToast('Error',true);} }); }
+        function openDJModal(data=null){
+            const isEdit = data?.id;
+            let socials = {};
+            try { socials = data?.socials ? JSON.parse(data.socials) : {}; } catch(e) { socials = {}; }
+            const formHtml = `<div class="flex justify-between items-center mb-3"><h3 class="text-lg font-bold">${isEdit?'Editar DJ':'Agregar DJ'}</h3><button onclick="closeModal()" class="text-2xl hover:text-primary">&times;</button></div>
+                <form id="itemForm" class="space-y-3">
+                    <input type="hidden" name="id" value="${data?.id||''}">
+                    <div class="grid md:grid-cols-2 gap-3">
+                        <div><label>Nombre *</label><input type="text" name="name" required value="${escapeHtml(data?.name||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                        <div><label>Género</label><input type="text" name="genre" value="${escapeHtml(data?.genre||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-3">
+                        <div><label>Ciudad</label><input type="text" name="city" value="${escapeHtml(data?.city||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                        <div><label>URL del Avatar</label><input type="url" name="avatar" value="${escapeHtml(data?.avatar||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                    </div>
+                    <div><label>Biografía</label><textarea name="bio" rows="3" class="w-full p-2 bg-neutral-800 rounded">${escapeHtml(data?.bio||'')}</textarea></div>
+                    <div class="border-t border-neutral-700 pt-3">
+                        <h4 class="font-semibold mb-2">Redes sociales</h4>
+                        <div class="grid md:grid-cols-2 gap-3">
+                            <div><label>Instagram</label><input type="text" name="instagram" placeholder="@usuario o URL" value="${escapeHtml(data?.instagram||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                            <div><label>Facebook</label><input type="text" name="facebook" placeholder="# para probar" value="${escapeHtml(socials.facebook||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                            <div><label>YouTube</label><input type="text" name="youtube" placeholder="# para probar" value="${escapeHtml(socials.youtube||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                            <div><label>TikTok</label><input type="text" name="tiktok" placeholder="# para probar" value="${escapeHtml(socials.tiktok||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                            <div><label>SoundCloud</label><input type="text" name="soundcloud" placeholder="# para probar" value="${escapeHtml(socials.soundcloud||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                            <div><label>WhatsApp</label><input type="text" name="whatsapp" placeholder="507..." value="${escapeHtml(socials.whatsapp||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                            <div class="md:col-span-2"><label>Web</label><input type="text" name="website" placeholder="# para probar" value="${escapeHtml(socials.website||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                        </div>
+                    </div>
+                    <div><label><input type="checkbox" name="active" value="1" ${data?.active!=0?'checked':''}> Activo</label></div>
+                    <div class="flex gap-2 pt-2"><button type="button" onclick="closeModal()" class="flex-1 p-2 bg-neutral-700 rounded">Cancelar</button><button type="submit" class="flex-1 p-2 bg-primary rounded">Guardar</button></div>
+                </form>`;
+            document.getElementById('modalContent').innerHTML = formHtml;
+            document.getElementById('itemModal').classList.add('show');
+            document.getElementById('itemForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = new FormData(e.target);
+                const formData = Object.fromEntries(form);
+                formData.active = form.has('active') ? 1 : 0;
+                formData.socials = {
+                    facebook: formData.facebook || '',
+                    youtube: formData.youtube || '',
+                    tiktok: formData.tiktok || '',
+                    soundcloud: formData.soundcloud || '',
+                    whatsapp: formData.whatsapp || '',
+                    website: formData.website || ''
+                };
+                ['facebook','youtube','tiktok','soundcloud','whatsapp','website'].forEach(key => delete formData[key]);
+                try {
+                    const res = await fetch('api/save_dj.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) });
+                    const result = await res.json();
+                    if (result.success) { showToast('DJ guardado'); closeModal(); location.reload(); }
+                    else showToast(result.error, true);
+                } catch(e) { showToast('Error', true); }
+            });
+        }
         function editDJ(id){ fetch('api/get_dj.php?id='+id).then(r=>r.json()).then(data=>openDJModal(data)).catch(e=>showToast('Error',true)); }
         async function toggleDJSuperpack(djName){ if(confirm(`¿Activar/Desactivar Super Pack para ${djName}?`)){ try{ const res=await fetch('api/toggle_superpack.php',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dj:djName}) }); const data=await res.json(); if(data.success){ showToast(data.message); location.reload(); }else showToast(data.error,true); }catch(e){showToast('Error',true);} } }
         

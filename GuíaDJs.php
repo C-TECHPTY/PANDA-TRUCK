@@ -1,8 +1,10 @@
 <?php
 // GuíaDJs.php
 require_once 'includes/config.php';
+require_once 'includes/track_visit.php';
 
 $db = getDB();
+trackVisit('dj_guide');
 
 // Obtener estadísticas reales para mostrar
 $stmt = $db->query("SELECT COUNT(*) as total FROM mixes WHERE active = 1");

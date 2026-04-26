@@ -57,6 +57,47 @@ try {
 $photo = $dj['profile_photo'] ?: ($dj['avatar'] ?: 'assets/img/default-avatar.jpg');
 $bio = $dj['biography'] ?: ($dj['bio'] ?? '');
 $instagram = trim($dj['instagram'] ?? '');
+$socialLinks = [];
+
+if ($instagram !== '') {
+    $socialLinks['instagram'] = [
+        'label' => 'Instagram',
+        'icon' => 'fab fa-instagram',
+        'url' => strpos($instagram, 'http') === 0 ? $instagram : 'https://instagram.com/' . ltrim($instagram, '@'),
+    ];
+}
+
+$savedSocials = trim($dj['socials'] ?? '');
+if ($savedSocials !== '') {
+    $decodedSocials = json_decode($savedSocials, true);
+    if (is_array($decodedSocials)) {
+        $socialConfig = [
+            'facebook' => ['label' => 'Facebook', 'icon' => 'fab fa-facebook-f'],
+            'youtube' => ['label' => 'YouTube', 'icon' => 'fab fa-youtube'],
+            'tiktok' => ['label' => 'TikTok', 'icon' => 'fab fa-tiktok'],
+            'soundcloud' => ['label' => 'SoundCloud', 'icon' => 'fab fa-soundcloud'],
+            'whatsapp' => ['label' => 'WhatsApp', 'icon' => 'fab fa-whatsapp'],
+            'website' => ['label' => 'Web', 'icon' => 'fas fa-globe'],
+        ];
+
+        foreach ($socialConfig as $key => $config) {
+            $url = trim($decodedSocials[$key] ?? '');
+            if ($url === '') {
+                continue;
+            }
+            if ($url === '#') {
+                $url = '#';
+            } elseif ($key === 'whatsapp' && strpos($url, 'http') !== 0) {
+                $url = 'https://wa.me/' . preg_replace('/\D+/', '', $url);
+            } elseif (strpos($url, 'http') !== 0) {
+                $url = 'https://' . ltrim($url, '/');
+            }
+
+            $socialLinks[$key] = $config + ['url' => $url];
+        }
+    }
+}
+
 $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
 ?>
 <!DOCTYPE html>
@@ -80,6 +121,11 @@ $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
             box-shadow: 0 18px 70px rgba(0, 0, 0, 0.35);
         }
         .mix-row:hover img { transform: scale(1.06); }
+        .dj-name {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            line-height: 1.02;
+        }
     </style>
 </head>
 <body class="text-white">
@@ -109,7 +155,7 @@ $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
                         </div>
                     </div>
 
-                    <h1 class="mt-5 text-3xl font-black tracking-tight md:text-4xl"><?php echo htmlspecialchars($dj['name']); ?></h1>
+                    <h1 class="dj-name mt-5 text-3xl font-black tracking-tight md:text-4xl"><?php echo htmlspecialchars($dj['name']); ?></h1>
                     <p class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-400">
                         <?php if (!empty($dj['genre'])): ?><span><i class="fas fa-music mr-1 text-red-500"></i><?php echo htmlspecialchars($dj['genre']); ?></span><?php endif; ?>
                         <?php if (!empty($dj['city'])): ?><span><i class="fas fa-location-dot mr-1 text-red-500"></i><?php echo htmlspecialchars($dj['city']); ?></span><?php endif; ?>
@@ -131,8 +177,14 @@ $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
                     </div>
 
                     <div class="mt-5 flex flex-col gap-2">
-                    <?php if ($isPro && $instagram): ?>
-                        <a href="https://instagram.com/<?php echo ltrim(htmlspecialchars($instagram), '@'); ?>" target="_blank" class="rounded-lg bg-neutral-800 px-4 py-3 text-center font-semibold hover:bg-neutral-700 transition"><i class="fab fa-instagram mr-2"></i>Seguir en Instagram</a>
+                    <?php if (!empty($socialLinks)): ?>
+                        <div class="grid grid-cols-2 gap-2">
+                        <?php foreach ($socialLinks as $social): ?>
+                            <a href="<?php echo htmlspecialchars($social['url']); ?>" target="_blank" rel="noopener" class="rounded-lg bg-neutral-800 px-3 py-3 text-center text-sm font-semibold hover:bg-neutral-700 transition">
+                                <i class="<?php echo htmlspecialchars($social['icon']); ?> mr-2"></i><?php echo htmlspecialchars($social['label']); ?>
+                            </a>
+                        <?php endforeach; ?>
+                        </div>
                     <?php endif; ?>
                         <a href="https://wa.me/?text=<?php echo rawurlencode('Mira el perfil de ' . $dj['name'] . ' en Panda Truck: ' . $shareUrl); ?>" target="_blank" class="rounded-lg bg-green-700 px-4 py-3 text-center font-semibold hover:bg-green-800 transition"><i class="fab fa-whatsapp mr-2"></i>Compartir perfil</a>
                     </div>

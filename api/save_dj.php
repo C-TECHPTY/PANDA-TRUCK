@@ -35,6 +35,11 @@ try {
     $bio = $data['bio'] ?? '';
     $biography = $data['biography'] ?? $bio;
     $profilePhoto = $data['profile_photo'] ?? $avatar;
+    $socials = $data['socials'] ?? '';
+
+    if (is_array($socials)) {
+        $socials = json_encode($socials, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    }
 
     if (isset($data['id']) && $data['id'] > 0) {
         $sql = "UPDATE djs SET name = :name, genre = :genre, city = :city, bio = :bio, 
@@ -54,7 +59,7 @@ try {
     $stmt->bindValue(':city', $data['city'] ?? '');
     $stmt->bindValue(':bio', $bio);
     $stmt->bindValue(':avatar', $avatar);
-    $stmt->bindValue(':socials', $data['socials'] ?? '');
+    $stmt->bindValue(':socials', $socials);
     $stmt->bindValue(':email', $data['email'] ?? '');
     $stmt->bindValue(':instagram', $data['instagram'] ?? '');
     $stmt->bindValue(':biography', $biography);

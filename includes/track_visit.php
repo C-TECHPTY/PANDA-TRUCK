@@ -29,6 +29,44 @@ if (!function_exists('shouldSkipVisitTracking')) {
     }
 }
 
+if (!function_exists('ensureSiteVisitsTable')) {
+    function ensureSiteVisitsTable($db = null) {
+        static $checked = false;
+
+        if ($checked) {
+            return true;
+        }
+
+        try {
+            $db = $db ?: getDB();
+            $db->exec("CREATE TABLE IF NOT EXISTS `site_visits` (
+                `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                `page_type` VARCHAR(50) NOT NULL,
+                `page_url` TEXT NOT NULL,
+                `related_id` INT NULL,
+                `dj_id` INT NULL,
+                `mix_id` INT NULL,
+                `ip_hash` CHAR(64) NOT NULL,
+                `user_agent` TEXT NULL,
+                `device_type` VARCHAR(30) NULL,
+                `referer` TEXT NULL,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`),
+                KEY `idx_site_visits_page_type` (`page_type`),
+                KEY `idx_site_visits_created_at` (`created_at`),
+                KEY `idx_site_visits_dj_id` (`dj_id`),
+                KEY `idx_site_visits_mix_id` (`mix_id`),
+                KEY `idx_site_visits_related_id` (`related_id`),
+                KEY `idx_site_visits_ip_created` (`ip_hash`, `created_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            $checked = true;
+            return true;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+}
+
 if (!function_exists('trackVisit')) {
     function trackVisit($pageType, $relatedId = null, $djId = null, $mixId = null) {
         if (PHP_SAPI === 'cli') {
@@ -58,6 +96,10 @@ if (!function_exists('trackVisit')) {
 
         try {
             $db = getDB();
+            if (!ensureSiteVisitsTable($db)) {
+                return false;
+            }
+
             $stmt = $db->prepare("SELECT id FROM site_visits
                                   WHERE page_type = :page_type
                                     AND page_url = :page_url

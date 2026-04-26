@@ -29,11 +29,18 @@ CREATE TABLE IF NOT EXISTS `djs` (
   `bio` text,
   `avatar` text,
   `socials` text,
+  `email` varchar(150) DEFAULT NULL,
+  `instagram` varchar(150) DEFAULT NULL,
+  `biography` text,
+  `profile_photo` text,
+  `slug` varchar(160) DEFAULT NULL,
   `mixes` int(11) DEFAULT 0,
   `videos` int(11) DEFAULT 0,
   `active` tinyint(4) DEFAULT 1,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_dj_name` (`name`),
+  KEY `idx_djs_slug` (`slug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Tabla de mixes
@@ -85,6 +92,28 @@ CREATE TABLE IF NOT EXISTS `statistics` (
   UNIQUE KEY `unique_item` (`item_id`,`item_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Tabla de visitas publicas
+CREATE TABLE IF NOT EXISTS `site_visits` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `page_type` VARCHAR(50) NOT NULL,
+  `page_url` TEXT NOT NULL,
+  `related_id` INT NULL,
+  `dj_id` INT NULL,
+  `mix_id` INT NULL,
+  `ip_hash` CHAR(64) NOT NULL,
+  `user_agent` TEXT NULL,
+  `device_type` VARCHAR(30) NULL,
+  `referer` TEXT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_site_visits_page_type` (`page_type`),
+  KEY `idx_site_visits_created_at` (`created_at`),
+  KEY `idx_site_visits_dj_id` (`dj_id`),
+  KEY `idx_site_visits_mix_id` (`mix_id`),
+  KEY `idx_site_visits_related_id` (`related_id`),
+  KEY `idx_site_visits_ip_created` (`ip_hash`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Tabla de eventos
 CREATE TABLE IF NOT EXISTS `events` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -124,8 +153,16 @@ INSERT INTO `users` (`username`, `password`, `email`, `role`) VALUES
 -- Insertar DJs de ejemplo
 INSERT INTO `djs` (`name`, `genre`, `city`, `avatar`) VALUES
 ('@DJHALLO507', 'Urbano', 'Panamá', 'https://yt3.ggpht.com/nu6MhAQ7vDs8binigBq2on8XwVgJUqWEcJR9Ldr36oHi4XQJPBQDo72-ySxaYWJxr5fok3q3=s176-c-k-c0x00ffffff-no-rj-mo'),
-('DJ_NELPTY', 'Urbano', 'Panamá', 'https://f005.backblazeb2.com/file/mixes-mp3/portadas/DJNEL.png'),
-('DJ JIMMY', 'Variado', 'Panamá', 'https://f005.backblazeb2.com/file/mixes-mp3/portadas/DJ+JIMMY.png');
+('DJ_NELPTY', 'Urbano', 'Panamá', 'https://f005.backblazeb2.com/file/DJIMMY-PANDA/MIXES/PORTADA/DJ+NELPTY.jpg'),
+('DJ JIMMY', 'Variado', 'Panamá', 'https://f005.backblazeb2.com/file/DJIMMY-PANDA/MIXES/PORTADA/DJ_JIMMY.jpg'),
+('DJ_IRVIN_ALGARETE', 'Crossover', 'Panamá', 'https://f005.backblazeb2.com/file/DJIMMY-PANDA/MIXES/PORTADA/DJ+IRVING.jpg'),
+('@DJMASTER507OFICIAL', 'Variado-mix', 'Panamá', 'https://f005.backblazeb2.com/file/mixes-mp3/portadas/@DJMASTER507OFICIAL.jpeg'),
+('Dj-Joc-Pty', 'VARIADOS', 'Panama', 'https://f005.backblazeb2.com/file/DJIMMY-PANDA/MIXES/PORTADA/Dj-Joc-Pty.jpg')
+ON DUPLICATE KEY UPDATE
+  `genre` = VALUES(`genre`),
+  `city` = VALUES(`city`),
+  `avatar` = VALUES(`avatar`),
+  `active` = 1;
 
 -- Insertar mixes de ejemplo
 INSERT INTO `mixes` (`title`, `dj`, `genre`, `url`, `cover`, `duration`, `sizeMB`, `date`) VALUES

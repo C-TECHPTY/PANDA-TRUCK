@@ -328,6 +328,34 @@ CREATE TABLE `statistics` (
   `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `site_visits`
+--
+
+DROP TABLE IF EXISTS `site_visits`;
+CREATE TABLE `site_visits` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `page_type` VARCHAR(50) NOT NULL,
+  `page_url` TEXT NOT NULL,
+  `related_id` INT NULL,
+  `dj_id` INT NULL,
+  `mix_id` INT NULL,
+  `ip_hash` CHAR(64) NOT NULL,
+  `user_agent` TEXT NULL,
+  `device_type` VARCHAR(30) NULL,
+  `referer` TEXT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_site_visits_page_type` (`page_type`),
+  KEY `idx_site_visits_created_at` (`created_at`),
+  KEY `idx_site_visits_dj_id` (`dj_id`),
+  KEY `idx_site_visits_mix_id` (`mix_id`),
+  KEY `idx_site_visits_related_id` (`related_id`),
+  KEY `idx_site_visits_ip_created` (`ip_hash`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 --
 -- Volcado de datos para la tabla `statistics`
 --
