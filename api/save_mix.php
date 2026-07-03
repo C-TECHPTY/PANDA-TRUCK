@@ -21,12 +21,15 @@ if (!$data) {
 
 // Conectar a BD
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/notifications.php';
+require_once __DIR__ . '/../includes/push.php';
 
 try {
     $db = getDB();
+    $isUpdate = isset($data['id']) && $data['id'] > 0;
     
     // Verificar si es actualización o inserción
-    if (isset($data['id']) && $data['id'] > 0) {
+    if ($isUpdate) {
         // Actualizar
         $sql = "UPDATE mixes SET title = :title, dj = :dj, genre = :genre, url = :url, 
                 cover = :cover, duration = :duration, sizeMB = :sizeMB, date = :date, active = :active 
@@ -52,7 +55,26 @@ try {
     $stmt->bindValue(':active', $data['active'] ?? 1);
     
     if ($stmt->execute()) {
-        $newId = isset($data['id']) ? $data['id'] : $db->lastInsertId();
+        $newId = $isUpdate ? (int)$data['id'] : (int)$db->lastInsertId();
+
+        try {
+            if ($isUpdate && !empty($data['send_notification'])) {
+                send_new_mix_notification($newId, true);
+            } elseif (!$isUpdate) {
+                send_new_mix_notification($newId);
+            }
+        } catch (Throwable $notificationError) {
+            // El correo no debe bloquear el guardado del mix.
+        }
+
+        try {
+            if (!$isUpdate) {
+                panda_push_new_mix($newId);
+            }
+        } catch (Throwable $pushError) {
+            // El push no debe bloquear el guardado del mix.
+        }
+
         echo json_encode(['success' => true, 'id' => $newId]);
     } else {
         echo json_encode(['success' => false, 'error' => 'Error al ejecutar SQL']);

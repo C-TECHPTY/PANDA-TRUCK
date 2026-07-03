@@ -19,9 +19,15 @@ $email = $data['email'] ?? '';
 $password = $data['password'] ?? '';
 $role = $data['role'] ?? 'admin';
 $dj_id = $data['dj_id'] ?? null;
+$allowedRoles = ['admin', 'chat_moderator', 'dj', 'viewer'];
 
 if (empty($username) || empty($email) || empty($password)) {
     echo json_encode(['success' => false, 'error' => 'Todos los campos son requeridos']);
+    exit;
+}
+
+if (!in_array($role, $allowedRoles, true)) {
+    echo json_encode(['success' => false, 'error' => 'Rol no permitido']);
     exit;
 }
 

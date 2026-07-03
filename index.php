@@ -103,7 +103,12 @@ try {
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png">
+    <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/chat.css?v=20260701-chat-poll-compact">
     <style>
         :root {
             --primary: #e1261d;
@@ -186,6 +191,103 @@ try {
             background-color: var(--primary);
             transform: translateY(-3px);
         }
+
+        .site-header-inner { gap: 1.25rem; }
+        .site-brand { min-width: 0; flex: 0 0 auto; }
+        .site-brand img { width: auto; object-fit: contain; }
+        .site-nav {
+            min-width: 0;
+            flex: 1 1 auto;
+            justify-content: flex-end;
+            gap: clamp(0.75rem, 1.4vw, 1.5rem);
+        }
+        .site-nav a,
+        .site-nav-group > button {
+            align-items: center;
+            display: inline-flex;
+            height: 2.75rem;
+            line-height: 1;
+            white-space: nowrap;
+        }
+        .site-nav-group { position: relative; }
+        .site-nav-dropdown {
+            position: absolute;
+            top: calc(100% + 0.65rem);
+            left: 0;
+            min-width: 13rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(12,12,12,0.98);
+            border-radius: 0.75rem;
+            padding: 0.45rem;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.35);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-0.35rem);
+            transition: opacity .18s ease, transform .18s ease;
+        }
+        .site-nav-group:hover .site-nav-dropdown,
+        .site-nav-group:focus-within .site-nav-dropdown {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+        .site-nav-dropdown a {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            border-radius: 0.55rem;
+            padding: 0.7rem 0.8rem;
+            color: #e5e5e5;
+        }
+        .site-nav-dropdown a:hover {
+            background: rgba(225,38,29,0.16);
+            color: var(--primary);
+        }
+        .site-nav > a[href="#mixes"],
+        .site-nav > a[href="#videos"],
+        .site-nav > a[href="albumes.php"],
+        .site-nav > a[href="#superpacks"] {
+            display: none;
+        }
+        .site-nav > a:nth-last-child(3),
+        .site-nav-primary,
+        .site-nav-action { padding-inline: 1rem; }
+
+        @media (max-width: 1180px) {
+            .site-brand span {
+                max-width: 8.5rem;
+                font-size: 1rem;
+                line-height: 1.15;
+            }
+            .site-nav {
+                gap: 0.8rem;
+                font-size: 0.92rem;
+            }
+            .site-nav > a:nth-last-child(3),
+            .site-nav-primary,
+            .site-nav-action { padding-inline: 0.85rem; }
+        }
+
+        @media (max-width: 1040px) {
+            .site-brand span { display: none; }
+            .site-nav {
+                gap: 0.65rem;
+                font-size: 0.88rem;
+            }
+            .site-nav-action span { display: none; }
+            .site-nav > a:nth-last-child(3) {
+                max-width: 6.5rem;
+                text-align: center;
+                line-height: 1.15;
+                white-space: normal;
+            }
+            .site-nav-action {
+                width: 2.75rem;
+                height: 2.75rem;
+                justify-content: center;
+                padding-inline: 0;
+            }
+        }
         
         .main-layout {
             display: flex;
@@ -250,26 +352,38 @@ try {
 <body class="bg-neutral-950 text-white">
     <!-- Header ORIGINAL (restaurado) -->
     <header class="sticky top-0 z-40 bg-neutral-900/90 backdrop-blur border-b border-neutral-800">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <a href="index.php" class="flex items-center gap-2">
-                <img src="<?php echo SITE_LOGO; ?>" alt="Panda Truck" class="h-10">
+        <div class="site-header-inner max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <a href="index.php" class="site-brand flex items-center gap-2">
+                <img src="<?php echo SITE_LOGO; ?>" alt="Panda Truck" class="h-10 lg:h-9">
                 <span class="text-xl font-bold hidden sm:inline"><?php echo SITE_TITLE; ?></span>
             </a>
             
             <!-- Menú Desktop ORIGINAL -->
-            <nav class="hidden md:flex items-center gap-6">
+            <nav class="site-nav hidden md:flex items-center">
+                <div class="site-nav-group">
+                    <button type="button" class="hover:text-primary transition font-semibold">
+                        Descarga <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                    </button>
+                    <div class="site-nav-dropdown">
+                        <a href="#mixes"><i class="fas fa-music text-primary"></i> Mixes</a>
+                        <a href="#videos"><i class="fas fa-video text-primary"></i> Videos</a>
+                        <a href="albumes.php"><i class="fas fa-compact-disc text-primary"></i> Albumes</a>
+                        <a href="#superpacks"><i class="fas fa-box text-primary"></i> Super Packs</a>
+                    </div>
+                </div>
                 <a href="#mixes" class="hover:text-primary transition">Mixes</a>
                 <a href="#videos" class="hover:text-primary transition">Videos</a>
                 <a href="albumes.php" class="hover:text-primary transition">Álbumes</a>
                 <a href="#superpacks" class="hover:text-primary transition">Super Packs</a>
                 <a href="#top-djs" class="hover:text-primary transition">Top DJs</a>
+                <a href="tienda.php" class="hover:text-primary transition">Tienda</a>
                 <a href="dj-pro.php" class="hover:text-primary transition">DJ PRO</a>
                 <a href="GuíaDJs.php" class="px-4 py-2 bg-primary rounded-lg hover:bg-primary-hover transition">Sube tu mix</a>
-                <a href="player/index.php" class="px-4 py-2 bg-neutral-800 rounded-lg hover:bg-primary transition flex items-center gap-2">
-                    <i class="fas fa-headphones"></i> Reproductor
+                <a href="player/index.php" class="site-nav-action py-2 bg-neutral-800 rounded-lg hover:bg-primary transition flex items-center gap-2">
+                    <i class="fas fa-headphones"></i> <span>Reproductor</span>
                 </a>
-                <a href="player/video.php" class="px-4 py-2 bg-neutral-800 rounded-lg hover:bg-primary transition flex items-center gap-2">
-                    <i class="fas fa-video"></i> Videos
+                <a href="player/video.php" class="site-nav-action py-2 bg-neutral-800 rounded-lg hover:bg-primary transition flex items-center gap-2">
+                    <i class="fas fa-video"></i> <span>Videos</span>
                 </a>
             </nav>
             
@@ -284,6 +398,7 @@ try {
                 <a href="albumes.php" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Álbumes</a>
                 <a href="#superpacks" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Super Packs</a>
                 <a href="#top-djs" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Top DJs</a>
+                <a href="tienda.php" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">Tienda</a>
                 <a href="dj-pro.php" class="block px-3 py-2 rounded-lg hover:bg-neutral-900">DJ PRO</a>
                 <a href="GuíaDJs.php" class="block px-3 py-2 rounded-lg bg-primary text-center">Sube tu mix</a>
                 <a href="player/index.php" class="block px-3 py-2 rounded-lg bg-neutral-800 text-center">🎧 Reproductor</a>
@@ -341,6 +456,12 @@ try {
                         <p class="text-xs text-neutral-500"><?php echo htmlspecialchars($hero['hero_video_title']); ?></p>
                     </div>
                 </div>
+                <div class="live-chat-launch">
+                    <a href="sala-chat.php" class="live-chat-open" data-chat-open>
+                        <i class="fas fa-comments"></i>
+                        <span>Ingresa a nuestra sala de chat y manda tus saludos</span>
+                    </a>
+                </div>
             </div>
         </section>
         
@@ -384,6 +505,9 @@ try {
                             <i class="fas fa-circle text-neutral-600 text-[8px]"></i>
                             Detenido - Haz clic en play para escuchar
                         </div>
+                        <button type="button" class="hidden px-4 py-2 rounded-full bg-neutral-800 hover:bg-neutral-700 text-sm font-semibold transition" data-panda-push-button>
+                            <i class="fas fa-bell mr-2"></i>Activar avisos
+                        </button>
                     </div>
                 </div>
             </div>
@@ -450,6 +574,9 @@ try {
                                 <div class="flex justify-between items-center mt-3 text-xs text-neutral-400">
                                     <span>▶️ <span class="play-count" id="play-<?php echo $mix['id']; ?>"><?php echo number_format($mix['plays'] ?? 0); ?></span></span>
                                     <span>⬇️ <span class="download-count" id="dl-<?php echo $mix['id']; ?>"><?php echo number_format($mix['downloads'] ?? 0); ?></span></span>
+                                    <button type="button" class="mix-like-btn text-neutral-400 hover:text-red-500 transition" data-mix-id="<?php echo (int)$mix['id']; ?>" data-liked="0" aria-pressed="false" title="Me gusta">
+                                        <i class="far fa-heart"></i> <span class="mix-like-count">0</span>
+                                    </button>
                                     <span><?php echo $mix['sizeMB'] ?? 0; ?> MB</span>
                                 </div>
                             </div>
@@ -626,7 +753,78 @@ try {
         </div>
     </footer>
     
+    <div data-live-chat data-api-base="api/chat">
+        <div class="live-chat-overlay" data-chat-overlay></div>
+        <aside class="live-chat-panel" data-chat-panel aria-label="Sala de chat en vivo">
+            <div class="live-chat-header">
+                <div class="live-chat-top">
+                    <div class="live-chat-title">
+                        <div class="live-chat-title-icon"><i class="fas fa-comments"></i></div>
+                        <div>
+                            <strong>Sala en vivo</strong>
+                            <span>Saluda, pide tu complacencia y acompaña a los DJs</span>
+                        </div>
+                    </div>
+                    <button type="button" class="live-chat-close" data-chat-close aria-label="Cerrar chat">
+                        <i class="fas fa-times"></i>
+                </button>
+                </div>
+                <div class="live-chat-rules" data-chat-rules>Respeta a los DJs y a los oyentes.</div>
+                <div class="live-chat-pinned hidden" data-chat-pinned></div>
+                <div class="live-chat-live" data-chat-live>
+                    <div>
+                        <span class="live-chat-live-kicker">EN VIVO</span>
+                        <strong data-chat-live-title>Ahora en vivo</strong>
+                        <small data-chat-live-subtitle>Panda Truck Reloaded</small>
+                    </div>
+                    <span class="live-chat-listeners" data-chat-listeners>0 oyentes</span>
+                </div>
+            </div>
+            <div class="live-chat-identity">
+                <label class="live-chat-name-field">
+                    <span>Tu nombre para participar</span>
+                    <input type="text" data-chat-name maxlength="40" placeholder="Ejemplo: Carlos507">
+                </label>
+                <button type="button" class="live-chat-save-name" data-chat-save-name aria-label="Guardar nombre">
+                    <i class="fas fa-check"></i>
+                </button>
+            </div>
+            <div class="live-chat-messages" data-chat-messages>
+                <div class="live-chat-empty">Todavia no hay mensajes. Se el primero en mandar un saludo.</div>
+            </div>
+            <div class="live-chat-poll hidden" data-chat-poll></div>
+            <div class="live-chat-composer">
+                <div class="live-chat-inline-reactions" data-chat-inline-reactions aria-label="Reacciones rapidas"></div>
+                <div class="live-chat-quick-emojis" aria-label="Emojis rapidos">
+                    <button type="button" data-chat-emoji="🔥">🔥</button>
+                    <button type="button" data-chat-emoji="❤️">❤️</button>
+                    <button type="button" data-chat-emoji="😂">😂</button>
+                    <button type="button" data-chat-emoji="😍">😍</button>
+                    <button type="button" data-chat-emoji="👏">👏</button>
+                    <button type="button" data-chat-emoji="🎶">🎶</button>
+                </div>
+                <form class="live-chat-form" data-chat-form>
+                    <input type="text" data-chat-input maxlength="500" autocomplete="off" placeholder="Escribe tu saludo o complacencia...">
+                    <button type="submit" aria-label="Enviar mensaje"><i class="fas fa-paper-plane"></i></button>
+                </form>
+                <button type="button" class="live-chat-back-radio" data-chat-close>
+                    <i class="fas fa-radio"></i>
+                    <span>Volver a la radio</span>
+                </button>
+            </div>
+        </aside>
+        <div class="live-chat-reactions" aria-label="Reacciones en vivo">
+            <button type="button" data-chat-reaction="❤️">❤️</button>
+            <button type="button" data-chat-reaction="🔥">🔥</button>
+            <button type="button" data-chat-reaction="👏">👏</button>
+            <button type="button" data-chat-reaction="🎶">🎶</button>
+        </div>
+    </div>
+
     <div id="toast" class="toast"></div>
+    <script src="assets/js/mix-likes.js" data-api-base="api"></script>
+    <script src="assets/js/chat.js?v=20260701-chat-poll-compact"></script>
+    <script src="assets/js/pwa.js?v=20260703-push-user-msg"></script>
     
     <script>
         function registrarClickBanner(bannerId) {
@@ -639,8 +837,8 @@ try {
         
         // ==================== RADIO ====================
         const radioAudio = new Audio();
-        radioAudio.preload = 'none';
-        radioAudio.src = '<?php echo $radio_url; ?>';
+        radioAudio.preload = 'auto';
+        radioAudio.src = <?php echo json_encode($radio_url); ?>;
         const radioPlayBtn = document.getElementById('radioPlayBtn');
         const radioStopBtn = document.getElementById('radioStopBtn');
         const radioVolume = document.getElementById('radioVolume');
@@ -648,6 +846,12 @@ try {
         const radioStatus = document.getElementById('radioStatus');
         
         let isPlaying = false;
+        let radioAutoplayTried = false;
+        let radioUnlockEventsArmed = false;
+        let radioShouldResume = false;
+        let radioUserStopped = false;
+        let radioReconnectTimer = null;
+        let radioReconnectAttempts = 0;
         radioAudio.volume = 0.7;
         
         function updateRadioUI() {
@@ -664,23 +868,91 @@ try {
             }
         }
         
+        function playRadio(options = {}) {
+            radioShouldResume = true;
+            radioUserStopped = false;
+            clearTimeout(radioReconnectTimer);
+            return radioAudio.play().then(() => {
+                isPlaying = true;
+                radioReconnectAttempts = 0;
+                updateRadioUI();
+            }).catch(e => {
+                console.log('Error al reproducir:', e);
+                isPlaying = false;
+                if (options.autoplay) radioShouldResume = false;
+                updateRadioUI();
+                radioStatus.innerHTML = options.autoplay
+                    ? '<i class="fas fa-volume-off text-yellow-500"></i> Haz clic en play para escuchar la radio'
+                    : '<i class="fas fa-exclamation-triangle text-yellow-500"></i> Error al cargar la radio.';
+            });
+        }
+
+        function scheduleRadioReconnect(reason = 'stream') {
+            if (radioUserStopped || !radioShouldResume) return;
+            clearTimeout(radioReconnectTimer);
+            const delay = Math.min(18000, 6000 + (radioReconnectAttempts * 2500));
+            radioReconnectAttempts++;
+            radioStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin text-yellow-500"></i> Reconectando radio...';
+            radioReconnectTimer = setTimeout(() => {
+                if (radioUserStopped || !radioShouldResume) return;
+                if (reason === 'error' || reason === 'ended') {
+                    try {
+                        radioAudio.load();
+                    } catch (e) {
+                        console.log('No se pudo recargar la radio:', e);
+                    }
+                }
+                playRadio({ reconnect: true });
+            }, delay);
+        }
+
+        function tryRadioAutoplay() {
+            if (radioAutoplayTried || isPlaying) return;
+            radioAutoplayTried = true;
+            playRadio({ autoplay: true });
+        }
+
+        function tryRadioFromUserGesture() {
+            if (isPlaying) return;
+            playRadio({ autoplay: true });
+        }
+
+        function armRadioUnlockEvents() {
+            if (radioUnlockEventsArmed) return;
+            radioUnlockEventsArmed = true;
+
+            ['click', 'touchstart', 'keydown'].forEach((eventName) => {
+                document.addEventListener(eventName, tryRadioFromUserGesture, {
+                    once: true,
+                    passive: true
+                });
+            });
+        }
+
         radioPlayBtn.addEventListener('click', () => {
             if (isPlaying) {
+                radioUserStopped = true;
+                radioShouldResume = false;
+                clearTimeout(radioReconnectTimer);
                 radioAudio.pause();
                 isPlaying = false;
             } else {
-                radioAudio.play().catch(e => {
-                    console.log('Error al reproducir:', e);
-                    radioStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-yellow-500"></i> Error al cargar la radio.';
-                });
-                isPlaying = true;
+                playRadio();
+                return;
             }
             updateRadioUI();
         });
         
         radioStopBtn.addEventListener('click', () => {
+            radioUserStopped = true;
+            radioShouldResume = false;
+            clearTimeout(radioReconnectTimer);
             radioAudio.pause();
-            radioAudio.currentTime = 0;
+            try {
+                radioAudio.currentTime = 0;
+            } catch (e) {
+                console.log('La radio en vivo no permite reiniciar tiempo:', e);
+            }
             isPlaying = false;
             updateRadioUI();
         });
@@ -689,8 +961,32 @@ try {
             radioAudio.volume = e.target.value / 100;
         });
         
-        radioAudio.addEventListener('playing', () => { isPlaying = true; updateRadioUI(); });
-        radioAudio.addEventListener('pause', () => { isPlaying = false; updateRadioUI(); });
+        radioAudio.addEventListener('playing', () => { isPlaying = true; radioReconnectAttempts = 0; updateRadioUI(); });
+        radioAudio.addEventListener('pause', () => {
+            isPlaying = false;
+            updateRadioUI();
+        });
+        ['error', 'ended'].forEach((eventName) => {
+            radioAudio.addEventListener(eventName, () => scheduleRadioReconnect(eventName));
+        });
+        radioAudio.addEventListener('stalled', () => {
+            if (!radioUserStopped && radioShouldResume && radioAudio.readyState < 2) {
+                scheduleRadioReconnect('stalled');
+            }
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && radioShouldResume && radioAudio.paused) {
+                setTimeout(() => {
+                    if (!radioUserStopped && radioShouldResume && radioAudio.paused) {
+                        playRadio({ reconnect: true });
+                    }
+                }, 1200);
+            }
+        });
+        armRadioUnlockEvents();
+        document.addEventListener('DOMContentLoaded', () => setTimeout(tryRadioAutoplay, 250));
+        window.addEventListener('load', () => setTimeout(tryRadioAutoplay, 500));
+        window.addEventListener('pageshow', () => setTimeout(tryRadioAutoplay, 500));
         
         // ==================== FUNCIONES AUXILIARES ====================
         function showToast(message, isError = false, duration = 3000) {

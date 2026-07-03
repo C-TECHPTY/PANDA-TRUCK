@@ -12,6 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/notifications.php';
 
 $auth->requireAdmin();
 
@@ -41,7 +42,9 @@ try {
         $socials = json_encode($socials, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
 
-    if (isset($data['id']) && $data['id'] > 0) {
+    $isUpdate = isset($data['id']) && $data['id'] > 0;
+
+    if ($isUpdate) {
         $sql = "UPDATE djs SET name = :name, genre = :genre, city = :city, bio = :bio, 
                 avatar = :avatar, socials = :socials, email = :email, instagram = :instagram,
                 biography = :biography, profile_photo = :profile_photo, slug = :slug,
@@ -68,7 +71,19 @@ try {
     $stmt->bindValue(':active', $data['active'] ?? 1);
 
     if ($stmt->execute()) {
-        echo json_encode(['success' => true]);
+        $newId = $isUpdate ? (int)$data['id'] : (int)$db->lastInsertId();
+
+        try {
+            if ($isUpdate && !empty($data['send_notification'])) {
+                send_new_dj_notification($newId, true);
+            } elseif (!$isUpdate) {
+                send_new_dj_notification($newId);
+            }
+        } catch (Throwable $notificationError) {
+            // El correo no debe bloquear el guardado del DJ.
+        }
+
+        echo json_encode(['success' => true, 'id' => $newId]);
     } else {
         echo json_encode(['success' => false, 'error' => 'Error al guardar']);
     }

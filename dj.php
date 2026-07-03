@@ -108,6 +108,10 @@ $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
     <title><?php echo htmlspecialchars($dj['name']); ?> - Panda Truck</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png">
+    <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
         :root { --pt-red: #e1261d; }
@@ -378,6 +382,9 @@ $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
                         <div class="min-w-0 flex-1">
                             <h3 class="mix-row-title truncate font-bold"><?php echo htmlspecialchars($mix['title']); ?></h3>
                             <p class="mix-row-meta mt-1 text-sm text-neutral-400"><?php echo htmlspecialchars($mix['genre']); ?><?php echo !empty($mix['duration']) ? ' / ' . htmlspecialchars($mix['duration']) : ''; ?></p>
+                            <button type="button" class="mix-like-btn mt-2 text-xs text-neutral-400 hover:text-red-500 transition" data-mix-id="<?php echo (int)$mix['id']; ?>" data-liked="0" aria-pressed="false" title="Me gusta">
+                                <i class="far fa-heart"></i> <span class="mix-like-count">0</span>
+                            </button>
                         </div>
                         <div class="mix-row-actions flex shrink-0 gap-2">
                             <a href="player/index.php?id=<?php echo (int)$mix['id']; ?>" class="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 hover:bg-red-700 transition" title="Reproducir"><i class="fas fa-play"></i></a>
@@ -390,5 +397,6 @@ $shareUrl = BASE_URL . 'dj.php?slug=' . urlencode($dj['slug'] ?: $dj['id']);
             </div>
         </section>
     </main>
+    <script src="assets/js/mix-likes.js" data-api-base="api"></script>
 </body>
 </html>

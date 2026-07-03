@@ -9,6 +9,17 @@ $id = intval($_GET['id'] ?? 0);
 $db = getDB();
 $data = [];
 
+function shareAbsoluteUrl($url) {
+    $url = trim((string)$url);
+    if ($url === '') {
+        return '';
+    }
+    if (preg_match('/^https?:\/\//i', $url)) {
+        return $url;
+    }
+    return SITE_URL . ltrim($url, '/');
+}
+
 if ($type === 'mix' && $id > 0) {
     $stmt = $db->prepare("SELECT id, title, dj, cover FROM mixes WHERE id = :id AND active = 1");
     $stmt->bindValue(':id', $id);
@@ -19,8 +30,8 @@ if ($type === 'mix' && $id > 0) {
         $data = [
             'title' => $mix['title'],
             'artist' => $mix['dj'],
-            'image' => $mix['cover'] ?? BASE_URL . 'assets/img/default-cover.jpg',
-            'url' => BASE_URL . 'player/index.php?id=' . $mix['id'],
+            'image' => shareAbsoluteUrl($mix['cover'] ?: 'assets/img/default-cover.jpg'),
+            'url' => SITE_URL . 'player/index.php?id=' . $mix['id'],
             'type' => 'mix'
         ];
     }
@@ -34,8 +45,8 @@ if ($type === 'mix' && $id > 0) {
         $data = [
             'title' => $video['title'],
             'artist' => $video['dj'],
-            'image' => $video['cover'] ?? BASE_URL . 'assets/img/default-video.jpg',
-            'url' => BASE_URL . 'player/video.php?id=' . $video['id'],
+            'image' => shareAbsoluteUrl($video['cover'] ?: 'assets/img/default-video.jpg'),
+            'url' => SITE_URL . 'player/video.php?id=' . $video['id'],
             'type' => 'video'
         ];
     }
@@ -49,8 +60,8 @@ if ($type === 'mix' && $id > 0) {
         $data = [
             'title' => 'Perfil de ' . $dj['name'],
             'artist' => $dj['name'],
-            'image' => $dj['avatar'] ?? BASE_URL . 'assets/img/default-avatar.jpg',
-            'url' => BASE_URL . 'dj/perfil.php?dj=' . urlencode($dj['name']),
+            'image' => shareAbsoluteUrl($dj['avatar'] ?: 'assets/img/default-avatar.jpg'),
+            'url' => SITE_URL . 'dj.php?slug=' . urlencode($dj['id']),
             'type' => 'dj'
         ];
     }
@@ -65,8 +76,8 @@ if ($type === 'mix' && $id > 0) {
         $data = [
             'title' => 'Super Pack - ' . $dj['name'],
             'artist' => $dj['name'],
-            'image' => $dj['avatar'] ?? BASE_URL . 'assets/img/default-avatar.jpg',
-            'url' => BASE_URL . 'dj/superpack.php?dj=' . urlencode($dj['name']),
+            'image' => shareAbsoluteUrl($dj['avatar'] ?: 'assets/img/default-avatar.jpg'),
+            'url' => SITE_URL . 'dj/superpack.php?dj=' . urlencode($dj['name']),
             'type' => 'superpack'
         ];
     }

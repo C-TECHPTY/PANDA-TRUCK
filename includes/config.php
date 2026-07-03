@@ -25,6 +25,7 @@ define('DB_PASS', $configValue('DB_PASS', ''));
 
 // Site configuration.
 define('BASE_URL', $configValue('BASE_URL', 'https://pandatruckreloaded.com/'));
+define('SITE_URL', rtrim($configValue('SITE_URL', BASE_URL), '/') . '/');
 define('SITE_TITLE', $configValue('SITE_TITLE', 'Panda Truck Reloaded'));
 define('SITE_DESCRIPTION', $configValue('SITE_DESCRIPTION', 'La casa de los DJs en Panama - Descarga los mejores mixes'));
 define('SITE_LOGO', $configValue('SITE_LOGO', 'assets/img/logo.png'));
@@ -35,6 +36,8 @@ define('FOOTER_TEXT', $configValue('FOOTER_TEXT', 'Panda Truck Reloaded - La cas
 define('CDN_BASE_URL', rtrim($configValue('CDN_BASE_URL', 'https://panda-truck.b-cdn.net/'), '/') . '/');
 define('BACKBLAZE_AUDIO_ORIGIN', rtrim($configValue('BACKBLAZE_AUDIO_ORIGIN', 'https://f005.backblazeb2.com/file/'), '/') . '/');
 define('CDN_AUDIO_ENABLED', filter_var($configValue('CDN_AUDIO_ENABLED', true), FILTER_VALIDATE_BOOLEAN));
+define('ADMIN_NOTIFY_EMAIL', $configValue('ADMIN_NOTIFY_EMAIL', ''));
+define('NOTIFICATIONS_ENABLED', filter_var($configValue('NOTIFICATIONS_ENABLED', true), FILTER_VALIDATE_BOOLEAN));
 define('SMTP_HOST', $configValue('SMTP_HOST', ''));
 define('SMTP_USER', $configValue('SMTP_USER', ''));
 define('SMTP_PASS', $configValue('SMTP_PASS', ''));

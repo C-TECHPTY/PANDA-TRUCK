@@ -28,6 +28,7 @@ includes/config.local.php
 # Runtime files
 error_log
 api/error_log
+dj/error_log
 *.log
 uploads/
 
@@ -51,6 +52,14 @@ generate_hash.php
 api_test*
 test*.php
 test*.html
+
+# Mobile generated files and local toolchains
+panda-mobile-app/android/build/
+panda-mobile-app/android/jdk17/
+panda-mobile-app/android/release/
+*.apk
+*.idsig
+*.keystore
 
 # OS/editor noise
 .DS_Store

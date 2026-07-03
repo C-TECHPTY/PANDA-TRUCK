@@ -79,6 +79,19 @@ class Auth {
     public function isAdmin() {
         return $this->isLoggedIn() && in_array($_SESSION['user_role'], ['superadmin', 'admin']);
     }
+
+    public function isChatModerator() {
+        return $this->isLoggedIn() && $_SESSION['user_role'] === 'chat_moderator';
+    }
+
+    public function requireRole($role) {
+        $this->requireLogin();
+        if ($_SESSION['user_role'] !== $role) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Acceso denegado.']);
+            exit;
+        }
+    }
     
     public function logActivity($userId, $action, $details = null) {
         $username = isset($_SESSION['username']) ? $_SESSION['username'] : null;
@@ -143,6 +156,47 @@ class Auth {
                                   LEFT JOIN djs d ON u.dj_id = d.id 
                                   ORDER BY u.id DESC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function createUser($username, $email, $password, $role = 'admin', $dj_id = null) {
+        $allowedRoles = ['admin', 'chat_moderator', 'dj', 'viewer'];
+        if (!in_array($role, $allowedRoles, true)) {
+            $role = 'viewer';
+        }
+
+        $username = trim((string)$username);
+        $email = trim((string)$email);
+        if ($username === '' || $email === '' || $password === '') {
+            return ['success' => false, 'error' => 'Todos los campos son requeridos'];
+        }
+
+        if (strlen($password) < 6) {
+            return ['success' => false, 'error' => 'La contraseña debe tener al menos 6 caracteres'];
+        }
+
+        $exists = $this->db->prepare("SELECT id FROM users WHERE username = :username OR email = :email LIMIT 1");
+        $exists->execute([':username' => $username, ':email' => $email]);
+        if ($exists->fetch(PDO::FETCH_ASSOC)) {
+            return ['success' => false, 'error' => 'Ese usuario o correo ya existe'];
+        }
+
+        $hashed = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $this->db->prepare(
+            "INSERT INTO users (username, password, email, role, dj_id, active)
+             VALUES (:username, :password, :email, :role, :dj_id, 1)"
+        );
+        $stmt->bindValue(':username', $username);
+        $stmt->bindValue(':password', $hashed);
+        $stmt->bindValue(':email', $email);
+        $stmt->bindValue(':role', $role);
+        $stmt->bindValue(':dj_id', $dj_id ?: null);
+
+        if ($stmt->execute()) {
+            $this->logActivity($_SESSION['user_id'] ?? null, 'Usuario creado', "Usuario: {$username}, rol: {$role}");
+            return ['success' => true, 'id' => (int)$this->db->lastInsertId()];
+        }
+
+        return ['success' => false, 'error' => 'No se pudo crear el usuario'];
     }
 }
 

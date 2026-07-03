@@ -3,6 +3,7 @@
 header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/notifications.php';
 
 $auth->requireAdmin();
 
@@ -16,7 +17,9 @@ if (!$data) {
 $db = getDB();
 
 try {
-    if (isset($data['id']) && $data['id'] > 0) {
+    $isUpdate = isset($data['id']) && $data['id'] > 0;
+
+    if ($isUpdate) {
         $sql = "UPDATE videos SET title = :title, dj = :dj, type = :type, url = :url, 
                 cover = :cover, duration = :duration, active = :active WHERE id = :id";
         $stmt = $db->prepare($sql);
@@ -36,7 +39,19 @@ try {
     $stmt->bindValue(':active', $data['active'] ?? 1);
 
     if ($stmt->execute()) {
-        echo json_encode(['success' => true]);
+        $newId = $isUpdate ? (int)$data['id'] : (int)$db->lastInsertId();
+
+        try {
+            if ($isUpdate && !empty($data['send_notification'])) {
+                send_new_video_notification($newId, true);
+            } elseif (!$isUpdate) {
+                send_new_video_notification($newId);
+            }
+        } catch (Throwable $notificationError) {
+            // El correo no debe bloquear el guardado del video.
+        }
+
+        echo json_encode(['success' => true, 'id' => $newId]);
     } else {
         echo json_encode(['success' => false, 'error' => 'Error al guardar']);
     }

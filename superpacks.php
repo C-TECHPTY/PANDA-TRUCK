@@ -11,6 +11,10 @@ trackVisit('superpacks');
     <title>Todos los Super Packs - Panda Truck Reloaded</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png">
+    <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
         :root { --primary: #e1261d; }

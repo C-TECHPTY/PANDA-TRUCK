@@ -16,6 +16,10 @@ $genres = $db->query("SELECT DISTINCT genre FROM mixes WHERE active = 1 ORDER BY
     <title>Todos los Mixes - Panda Truck Reloaded</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png">
+    <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
     <link rel="stylesheet" href="assets/css/style.css">
     <style>.mix-card{transition:transform .3s;}.mix-card:hover{transform:translateY(-4px);}</style>
 </head>
@@ -66,6 +70,9 @@ $genres = $db->query("SELECT DISTINCT genre FROM mixes WHERE active = 1 ORDER BY
                     <div class="flex justify-between mt-2 text-xs text-neutral-500">
                         <span>▶️ <?php echo $mix['plays']??0; ?></span>
                         <span>⬇️ <?php echo $mix['downloads']??0; ?></span>
+                        <button type="button" class="mix-like-btn text-neutral-400 hover:text-red-500 transition" data-mix-id="<?php echo (int)$mix['id']; ?>" data-liked="0" aria-pressed="false" title="Me gusta">
+                            <i class="far fa-heart"></i> <span class="mix-like-count">0</span>
+                        </button>
                         <span><?php echo $mix['sizeMB']??0; ?> MB</span>
                     </div>
                 </div>
@@ -79,5 +86,7 @@ $genres = $db->query("SELECT DISTINCT genre FROM mixes WHERE active = 1 ORDER BY
         function filter(){const s=search.value.toLowerCase(),g=genre.value.toLowerCase();let visible=0;document.querySelectorAll(".mix-card").forEach(card=>{const t=card.dataset.title,d=card.dataset.dj,ge=card.dataset.genre;if((!s||t.includes(s)||d.includes(s))&&(!g||ge===g)){card.classList.remove("hidden");visible++;}else{card.classList.add("hidden");}});noResults.classList.toggle("hidden",visible>0);}
         search.addEventListener("input",filter);genre.addEventListener("change",filter);
     </script>
+    <script src="assets/js/mix-likes.js" data-api-base="api"></script>
+    <script src="assets/js/pwa.js?v=20260702-push"></script>
 </body>
 </html>

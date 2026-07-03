@@ -6,16 +6,23 @@ ini_set('display_errors', 1);
 require_once 'includes/config.php';
 require_once 'includes/auth.php';
 require_once 'includes/track_visit.php';
+require_once 'includes/store.php';
 
 $auth->requireLogin();
 
 $user_role = $_SESSION['user_role'];
+if ($user_role === 'chat_moderator') {
+    header('Location: admin/chat.php');
+    exit;
+}
+
 $username = $_SESSION['username'];
 $user_id = $_SESSION['user_id'];
 $user_email = $_SESSION['user_email'] ?? '';
 $user_avatar = $_SESSION['user_avatar'] ?? '';
 
 $db = getDB();
+store_ensure_tables($db);
 
 // Obtener estadísticas del sistema
 $system_stats = $auth->getSystemStats();
@@ -27,11 +34,25 @@ $activity_logs = ($user_role === 'superadmin') ? $auth->getActivityLogs(20) : []
 $djs_list = $auth->getDJsList();
 
 // Obtener datos
-$mixes = $db->query("SELECT * FROM mixes WHERE active = 1 ORDER BY id DESC")->fetchAll();
+$mixLikesTableExists = false;
+try {
+    $stmt = $db->query("SHOW TABLES LIKE 'mix_likes'");
+    $mixLikesTableExists = (bool)$stmt->fetch(PDO::FETCH_NUM);
+} catch (PDOException $e) {
+    $mixLikesTableExists = false;
+}
+
+$mixLikesSelect = $mixLikesTableExists
+    ? "(SELECT COUNT(*) FROM mix_likes ml WHERE ml.mix_id = mixes.id) AS likes"
+    : "0 AS likes";
+
+$mixes = $db->query("SELECT mixes.*, {$mixLikesSelect} FROM mixes WHERE active = 1 ORDER BY id DESC")->fetchAll();
 $djs = $db->query("SELECT * FROM djs WHERE active = 1 ORDER BY id DESC")->fetchAll();
 $videos = $db->query("SELECT * FROM videos WHERE active = 1 ORDER BY id DESC")->fetchAll();
 $events = $db->query("SELECT * FROM events ORDER BY date DESC")->fetchAll();
 $banners = $db->query("SELECT * FROM banners ORDER BY id DESC")->fetchAll();
+$store_products = $db->query("SELECT * FROM store_products ORDER BY id DESC")->fetchAll();
+$store_orders_count = (int)$db->query("SELECT COUNT(*) FROM store_orders")->fetchColumn();
 
 // Obtener configuración del sistema
 $settings = [];
@@ -67,6 +88,26 @@ $total_downloads_all = 0;
 foreach ($stats_data as $stat) {
     $total_plays_all += (int)($stat['total_plays'] ?? 0);
     $total_downloads_all += (int)($stat['total_downloads'] ?? 0);
+}
+
+$total_mix_likes = 0;
+$top_liked_mixes = [];
+if ($mixLikesTableExists) {
+    $total_mix_likes = (int)$db->query("SELECT COUNT(*) FROM mix_likes")->fetchColumn();
+    $top_liked_mixes = $db->query("
+        SELECT
+            m.id,
+            m.title,
+            m.dj,
+            COUNT(ml.id) AS likes
+        FROM mixes m
+        LEFT JOIN mix_likes ml ON ml.mix_id = m.id
+        WHERE m.active = 1
+        GROUP BY m.id
+        HAVING likes > 0
+        ORDER BY likes DESC, m.id DESC
+        LIMIT 10
+    ")->fetchAll();
 }
 
 // Top 10 mixes más descargados (CORREGIDO - usa statistics)
@@ -115,6 +156,7 @@ $top_visit_pages = [];
 $top_visit_djs = [];
 $visit_page_types = [];
 $visit_devices = [];
+$monthly_visit_stats = [];
 
 try {
     if (ensureSiteVisitsTable($db)) {
@@ -168,6 +210,18 @@ try {
             GROUP BY COALESCE(NULLIF(device_type, ''), 'desconocido')
             ORDER BY visits DESC
         ")->fetchAll();
+
+        $monthly_visit_stats = $db->query("
+            SELECT
+                DATE_FORMAT(created_at, '%Y-%m') AS month_key,
+                MIN(DATE(created_at)) AS first_day,
+                COUNT(*) AS visits,
+                COUNT(DISTINCT ip_hash) AS unique_visitors
+            FROM site_visits
+            GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+            ORDER BY month_key DESC
+            LIMIT 12
+        ")->fetchAll();
     }
 } catch (Throwable $e) {
     $visit_stats = [
@@ -180,6 +234,7 @@ try {
     $top_visit_djs = [];
     $visit_page_types = [];
     $visit_devices = [];
+    $monthly_visit_stats = [];
 }
 
 // Usuarios
@@ -206,6 +261,10 @@ $cdn_audio_enabled = cdn_audio_enabled();
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png">
+    <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
     <style>
         /* ==================== ESTILOS RESPONSIVE ==================== */
         :root {
@@ -737,11 +796,14 @@ $cdn_audio_enabled = cdn_audio_enabled();
                 <div class="nav-item" data-section="djs"><i class="fas fa-headphones"></i> DJs <span class="count">(<?php echo count($djs); ?>)</span></div>
                 <div class="nav-item" data-section="videos"><i class="fas fa-video"></i> Videos <span class="count">(<?php echo count($videos); ?>)</span></div>
                 <div class="nav-item" data-section="albumes"><i class="fas fa-compact-disc"></i> Álbumes <span class="count">(<?php echo $total_albumes; ?>)</span></div>
+                <div class="nav-item" data-section="store"><i class="fas fa-store"></i> Tienda <span class="count">(<?php echo count($store_products); ?>)</span></div>
+                <div class="nav-item" data-section="orders"><i class="fas fa-receipt"></i> Pedidos <span class="count">(<?php echo $store_orders_count; ?>)</span></div>
                 <div class="nav-item" data-section="events"><i class="fas fa-calendar"></i> Eventos</div>
                 <div class="nav-item" data-section="banners"><i class="fas fa-ad"></i> Publicidad <span class="count">(<?php echo $total_banners; ?>)</span></div>
                 <div class="nav-item" data-section="stats"><i class="fas fa-chart-bar"></i> Estadísticas</div>
                 
                 <a href="admin/dj_pro.php" class="nav-item block"><i class="fas fa-crown"></i> DJ PRO</a>
+                <a href="admin/chat.php" class="nav-item block"><i class="fas fa-comments"></i> Chat en Vivo</a>
                 <a href="admin/reports/generate_partner_report.php" class="nav-item block"><i class="fas fa-file-pdf"></i> Reporte Socios</a>
 
                 <?php if ($user_role === 'superadmin'): ?>
@@ -790,6 +852,7 @@ $cdn_audio_enabled = cdn_audio_enabled();
                     <div class="stat-card"><div><p class="stat-label">Mixes</p><p class="stat-value"><?php echo count($mixes); ?></p></div></div>
                     <div class="stat-card"><div><p class="stat-label">DJs Activos</p><p class="stat-value"><?php echo count($djs); ?></p></div></div>
                     <div class="stat-card"><div><p class="stat-label">Descargas</p><p class="stat-value"><?php echo number_format($system_stats['total_downloads']); ?></p></div></div>
+                    <div class="stat-card"><div><p class="stat-label">Me Gusta</p><p class="stat-value"><?php echo number_format($total_mix_likes); ?></p></div></div>
                     <div class="stat-card"><div><p class="stat-label">Actividad Hoy</p><p class="stat-value"><?php echo $system_stats['activity_today']; ?></p></div></div>
                     <div class="stat-card"><div><p class="stat-label">Visitas Totales</p><p class="stat-value"><?php echo number_format((int)($visit_stats['total'] ?? 0)); ?></p></div></div>
                     <div class="stat-card"><div><p class="stat-label">Visitas Hoy</p><p class="stat-value"><?php echo number_format((int)($visit_stats['today'] ?? 0)); ?></p></div></div>
@@ -799,10 +862,11 @@ $cdn_audio_enabled = cdn_audio_enabled();
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                     <div class="bg-neutral-900 rounded-xl p-4"><h3 class="text-lg font-semibold mb-3">🎵 Top 10 Mixes más Descargados</h3><div class="space-y-2"><?php foreach ($top_mixes as $mix): ?><div class="flex justify-between items-center p-2 hover:bg-neutral-800 rounded"><div class="flex-1"><p class="font-medium text-sm truncate"><?php echo htmlspecialchars($mix['title']); ?></p><p class="text-xs text-neutral-500"><?php echo htmlspecialchars($mix['dj']); ?></p></div><div class="text-right"><p class="text-primary font-bold"><?php echo number_format($mix['downloads']); ?></p></div></div><?php endforeach; ?></div></div>
-                    <div class="bg-neutral-900 rounded-xl p-4"><h3 class="text-lg font-semibold mb-3">🏆 Top 5 DJs más Descargados</h3><div class="space-y-2"><?php foreach ($top_djs_stats as $dj): ?><div class="flex justify-between items-center p-2 hover:bg-neutral-800 rounded"><div><p class="font-medium text-sm"><?php echo htmlspecialchars($dj['dj']); ?></p><p class="text-xs text-neutral-500"><?php echo $dj['total_mixes']; ?> mixes</p></div><div class="text-right"><p class="text-primary font-bold"><?php echo number_format($dj['total_downloads']); ?></p></div></div><?php endforeach; ?></div></div>
+                    <div class="bg-neutral-900 rounded-xl p-4"><h3 class="text-lg font-semibold mb-3"><i class="fas fa-heart text-primary mr-2"></i>Top 10 Mixes con Me Gusta</h3><div class="space-y-2"><?php if (empty($top_liked_mixes)): ?><p class="text-sm text-neutral-500">Aún no hay me gusta registrados.</p><?php else: ?><?php foreach ($top_liked_mixes as $mix): ?><div class="flex justify-between items-center p-2 hover:bg-neutral-800 rounded"><div class="flex-1 min-w-0"><p class="font-medium text-sm truncate"><?php echo htmlspecialchars($mix['title']); ?></p><p class="text-xs text-neutral-500"><?php echo htmlspecialchars($mix['dj']); ?></p></div><div class="text-right shrink-0"><p class="text-primary font-bold"><i class="fas fa-heart mr-1"></i><?php echo number_format((int)$mix['likes']); ?></p></div></div><?php endforeach; ?><?php endif; ?></div></div>
                 </div>
-                
+
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                    <div class="bg-neutral-900 rounded-xl p-4"><h3 class="text-lg font-semibold mb-3">🏆 Top 5 DJs más Descargados</h3><div class="space-y-2"><?php foreach ($top_djs_stats as $dj): ?><div class="flex justify-between items-center p-2 hover:bg-neutral-800 rounded"><div><p class="font-medium text-sm"><?php echo htmlspecialchars($dj['dj']); ?></p><p class="text-xs text-neutral-500"><?php echo $dj['total_mixes']; ?> mixes</p></div><div class="text-right"><p class="text-primary font-bold"><?php echo number_format($dj['total_downloads']); ?></p></div></div><?php endforeach; ?></div></div>
                     <div class="bg-neutral-900 rounded-xl p-4">
                         <h3 class="text-lg font-semibold mb-3">Páginas más visitadas</h3>
                         <div class="space-y-2">
@@ -861,7 +925,7 @@ $cdn_audio_enabled = cdn_audio_enabled();
                     <div class="table-container">
                         <table class="w-full">
                             <thead>
-                                <tr><th>ID</th><th>Portada</th><th>Título</th><th>DJ</th><th>Plays</th><th>Downloads</th><th>Super Pack</th><th>Acciones</th></tr>
+                                <tr><th>ID</th><th>Portada</th><th>Título</th><th>DJ</th><th>Plays</th><th>Downloads</th><th>Me Gusta</th><th>Super Pack</th><th>Acciones</th></tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($mixes as $mix): ?>
@@ -872,6 +936,7 @@ $cdn_audio_enabled = cdn_audio_enabled();
                                     <td><?php echo htmlspecialchars($mix['dj']); ?></td>
                                     <td class="text-primary"><?php echo number_format($mix['plays']); ?></td>
                                     <td class="text-primary"><?php echo number_format($mix['downloads']); ?></td>
+                                    <td class="text-primary"><i class="fas fa-heart mr-1"></i><?php echo number_format((int)($mix['likes'] ?? 0)); ?></td>
                                     <td><button onclick="toggleMixSuperpack(<?php echo $mix['id']; ?>, <?php echo $mix['is_superpack'] ? 1 : 0; ?>)" class="px-2 py-1 rounded text-xs <?php echo $mix['is_superpack'] ? 'bg-green-600' : 'bg-neutral-700'; ?>"><?php echo $mix['is_superpack'] ? '🔥' : 'Activar'; ?></button></td>
                                     <td>
                                         <button onclick="editMix(<?php echo $mix['id']; ?>)" class="text-blue-400 mr-1"><i class="fas fa-edit"></i></button>
@@ -973,6 +1038,36 @@ $cdn_audio_enabled = cdn_audio_enabled();
                 <div class="bg-neutral-900 rounded-xl p-6 text-center"><p class="text-neutral-400">Módulo de eventos en desarrollo</p></div>
             </div>
             
+            <div id="store-section" class="section-content hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                    <h1 class="text-xl md:text-2xl font-bold">Tienda Souvenir</h1>
+                    <button onclick="openStoreProductModal()" class="btn-primary w-full sm:w-auto"><i class="fas fa-plus mr-2"></i>Agregar Producto</button>
+                </div>
+                <div class="mb-4 rounded-xl border border-neutral-800 bg-neutral-900 p-4 text-sm text-neutral-300">
+                    <a href="tienda.php" target="_blank" class="text-primary font-semibold"><i class="fas fa-up-right-from-square mr-1"></i>Ver tienda publica</a>
+                </div>
+                <div class="bg-neutral-900 rounded-xl overflow-hidden">
+                    <div class="table-container">
+                        <table class="w-full">
+                            <thead><tr><th>ID</th><th>Imagen</th><th>Producto</th><th>Precio</th><th>Tallas</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
+                            <tbody id="store-products-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="orders-section" class="section-content hidden">
+                <h1 class="text-xl md:text-2xl font-bold mb-4">Pedidos Souvenir</h1>
+                <div class="bg-neutral-900 rounded-xl overflow-hidden">
+                    <div class="table-container">
+                        <table class="w-full">
+                            <thead><tr><th>Pedido</th><th>Cliente</th><th>Productos</th><th>Pago</th><th>Total</th><th>Estado</th><th>Comprobante</th></tr></thead>
+                            <tbody id="store-orders-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- Banners Section (Publicidad) -->
             <div id="banners-section" class="section-content hidden">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
@@ -1013,6 +1108,7 @@ $cdn_audio_enabled = cdn_audio_enabled();
                 <div class="stats-grid">
                     <div class="stat-card"><p class="stat-label">Plays Totales</p><p class="stat-value"><?php echo number_format($total_plays_all); ?></p></div>
                     <div class="stat-card"><p class="stat-label">Descargas Totales</p><p class="stat-value"><?php echo number_format($total_downloads_all); ?></p></div>
+                    <div class="stat-card"><p class="stat-label">Me Gusta Totales</p><p class="stat-value"><?php echo number_format($total_mix_likes); ?></p></div>
                     <div class="stat-card"><p class="stat-label">Visitas Totales</p><p class="stat-value"><?php echo number_format((int)($visit_stats['total'] ?? 0)); ?></p></div>
                     <div class="stat-card"><p class="stat-label">Visitas Hoy</p><p class="stat-value"><?php echo number_format((int)($visit_stats['today'] ?? 0)); ?></p></div>
                     <div class="stat-card"><p class="stat-label">Visitas Semana</p><p class="stat-value"><?php echo number_format((int)($visit_stats['week'] ?? 0)); ?></p></div>
@@ -1039,6 +1135,27 @@ $cdn_audio_enabled = cdn_audio_enabled();
                     </div>
 
                     <div class="bg-neutral-900 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold mb-3"><i class="fas fa-heart text-primary mr-2"></i>Mixes con más Me Gusta</h3>
+                        <div class="space-y-2">
+                            <?php if (empty($top_liked_mixes)): ?>
+                            <p class="text-sm text-neutral-500">Aún no hay me gusta registrados.</p>
+                            <?php else: ?>
+                            <?php foreach ($top_liked_mixes as $mix): ?>
+                            <div class="flex justify-between items-center p-2 border-b border-neutral-800 gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium truncate"><?php echo htmlspecialchars($mix['title']); ?></p>
+                                    <p class="text-xs text-neutral-500 truncate"><?php echo htmlspecialchars($mix['dj']); ?></p>
+                                </div>
+                                <span class="text-primary font-bold shrink-0"><?php echo number_format((int)$mix['likes']); ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                    <div class="bg-neutral-900 rounded-xl p-4">
                         <h3 class="text-lg font-semibold mb-3">Visitas por Tipo de Página</h3>
                         <div class="space-y-2">
                             <?php if (empty($visit_page_types)): ?>
@@ -1052,6 +1169,33 @@ $cdn_audio_enabled = cdn_audio_enabled();
                             <?php endforeach; ?>
                             <?php endif; ?>
                         </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                    <div class="bg-neutral-900 rounded-xl p-4">
+                        <h3 class="text-lg font-semibold mb-3">Historial mensual de visitas</h3>
+                        <div class="table-container">
+                            <table class="w-full">
+                                <thead>
+                                    <tr><th>Mes</th><th>Visitas</th><th>Visitantes unicos</th></tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (empty($monthly_visit_stats)): ?>
+                                    <tr><td colspan="3" class="text-sm text-neutral-500">Aun no hay visitas registradas.</td></tr>
+                                    <?php else: ?>
+                                    <?php foreach ($monthly_visit_stats as $month): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars(date('M Y', strtotime($month['first_day']))); ?></td>
+                                        <td class="text-primary font-bold"><?php echo number_format((int)$month['visits']); ?></td>
+                                        <td class="text-primary font-bold"><?php echo number_format((int)$month['unique_visitors']); ?></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="mt-2 text-xs text-neutral-500">Visitantes unicos es una aproximacion por IP y navegador.</p>
                     </div>
                 </div>
 
@@ -1153,7 +1297,59 @@ $cdn_audio_enabled = cdn_audio_enabled();
                         <button type="submit" class="btn-primary w-full">Guardar</button></form>
                     </div>
                     
-                    <div class="bg-neutral-900 rounded-xl p-4"><h3 class="text-lg font-semibold mb-3"><i class="fas fa-eye text-primary mr-2"></i>Visualización</h3>
+                    <div class="bg-neutral-900 rounded-xl p-4"><h3 class="text-lg font-semibold mb-3"><i class="fas fa-envelope text-primary mr-2"></i>Notificaciones Email</h3>
+                        <form id="config-notifications-form" class="space-y-3">
+                            <div><label class="block text-sm mb-1">Correo destinatario</label><input type="email" id="admin_notify_email" class="w-full p-2 bg-neutral-800 rounded" placeholder="correo@dominio.com" value="<?php echo htmlspecialchars(($settings['admin_notify_email'] ?? '') !== '' ? $settings['admin_notify_email'] : (defined('ADMIN_NOTIFY_EMAIL') ? ADMIN_NOTIFY_EMAIL : '')); ?>"></div>
+                            <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="notifications_enabled" <?php echo (($settings['notifications_enabled'] ?? (defined('NOTIFICATIONS_ENABLED') ? (NOTIFICATIONS_ENABLED ? '1' : '0') : '1')) == '1') ? 'checked' : ''; ?>> Activar notificaciones</label>
+                            <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="notify_new_mixes" <?php echo (($settings['notify_new_mixes'] ?? '1') == '1') ? 'checked' : ''; ?>> Notificar nuevos mixes</label>
+                            <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="notify_new_videos" <?php echo (($settings['notify_new_videos'] ?? '1') == '1') ? 'checked' : ''; ?>> Notificar nuevos videos</label>
+                            <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="notify_new_djs" <?php echo (($settings['notify_new_djs'] ?? '1') == '1') ? 'checked' : ''; ?>> Notificar nuevos DJs</label>
+                            <p class="text-xs text-neutral-500">Solo se envia al correo configurado. No hace envios masivos.</p>
+                            <button type="submit" class="btn-primary w-full">Guardar Notificaciones</button>
+                        </form>
+                    </div>
+
+                    <div class="bg-neutral-900 rounded-xl p-4"><h3 class="text-lg font-semibold mb-3"><i class="fas fa-bell text-primary mr-2"></i>Notificaciones App</h3>
+                        <div class="space-y-3">
+                            <div class="rounded-lg bg-neutral-800 p-3 text-sm">
+                                <div id="push-status" class="text-neutral-300">Cargando estado push...</div>
+                                <div id="push-devices" class="text-xs text-neutral-500 mt-1"></div>
+                            </div>
+                            <form id="config-push-form" class="space-y-3">
+                                <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="push_enabled" <?php echo (($settings['push_enabled'] ?? '0') == '1') ? 'checked' : ''; ?>> Activar push</label>
+                                <div><label class="block text-sm mb-1">Remitente VAPID</label><input type="text" id="push_vapid_subject" class="w-full p-2 bg-neutral-800 rounded" placeholder="mailto:correo@dominio.com" value="<?php echo htmlspecialchars($settings['push_vapid_subject'] ?? 'mailto:no-reply@pandatruckreloaded.com'); ?>"></div>
+                                <button type="button" id="generate-push-keys" class="w-full p-2 bg-neutral-800 hover:bg-neutral-700 rounded">Generar llaves push</button>
+                                <button type="submit" class="btn-primary w-full">Guardar Push</button>
+                            </form>
+                            <form id="manual-push-form" class="space-y-3 pt-3 border-t border-neutral-800">
+                                <div><label class="block text-sm mb-1">Titulo</label><input type="text" id="manual_push_title" class="w-full p-2 bg-neutral-800 rounded" value="Ya estamos transmitiendo en vivo"></div>
+                                <div><label class="block text-sm mb-1">Mensaje</label><textarea id="manual_push_body" rows="2" class="w-full p-2 bg-neutral-800 rounded">Entra y escuchanos en Panda Truck Reloaded.</textarea></div>
+                                <div><label class="block text-sm mb-1">Destino</label><input type="text" id="manual_push_url" class="w-full p-2 bg-neutral-800 rounded" value="index.php#radio"></div>
+                                <button type="submit" class="btn-primary w-full">Enviar aviso a la app</button>
+                            </form>
+                            <p class="text-xs text-neutral-500">Llega solo a celulares que instalaron la web app y activaron avisos. El sonido depende de la configuracion de notificaciones del celular.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-neutral-900 rounded-xl p-4"><h3 class="text-lg font-semibold mb-3"><i class="fas fa-store text-primary mr-2"></i>Tienda Souvenir</h3>
+                        <p class="text-xs text-neutral-400 mb-3">Aqui colocas las cuentas donde el cliente puede pagar. Estos datos aparecen en la tienda y en el carrito antes de registrar el pedido.</p>
+                        <form id="config-store-form" class="space-y-3">
+                            <div class="grid md:grid-cols-2 gap-3">
+                                <div><label class="block text-sm mb-1">Correo socio 1</label><input type="email" id="store_notify_email_1" class="w-full p-2 bg-neutral-800 rounded" value="<?php echo htmlspecialchars($settings['store_notify_email_1'] ?? ''); ?>"></div>
+                                <div><label class="block text-sm mb-1">Correo socio 2</label><input type="email" id="store_notify_email_2" class="w-full p-2 bg-neutral-800 rounded" value="<?php echo htmlspecialchars($settings['store_notify_email_2'] ?? ''); ?>"></div>
+                            </div>
+                            <div><label class="block text-sm mb-1">Cuenta Yappy para cobrar</label><textarea id="store_yappy_info" rows="2" class="w-full p-2 bg-neutral-800 rounded" placeholder="Ejemplo: Yappy a Nombre / 6000-0000 / no colocar nada en descripcion"><?php echo htmlspecialchars($settings['store_yappy_info'] ?? ''); ?></textarea></div>
+                            <div><label class="block text-sm mb-1">Cuenta ACH para cobrar</label><textarea id="store_ach_info" rows="2" class="w-full p-2 bg-neutral-800 rounded" placeholder="Ejemplo: Banco / tipo de cuenta / numero / nombre"><?php echo htmlspecialchars($settings['store_ach_info'] ?? ''); ?></textarea></div>
+                            <div class="grid md:grid-cols-2 gap-3">
+                                <div><label class="block text-sm mb-1">Correo PayPal</label><input type="email" id="store_paypal_email" class="w-full p-2 bg-neutral-800 rounded" value="<?php echo htmlspecialchars($settings['store_paypal_email'] ?? ''); ?>"></div>
+                                <div><label class="block text-sm mb-1">Link PayPal para pagar con tarjeta Visa</label><input type="url" id="store_paypal_url" class="w-full p-2 bg-neutral-800 rounded" placeholder="https://paypal.me/tuusuario o link de checkout PayPal" value="<?php echo htmlspecialchars($settings['store_paypal_url'] ?? ''); ?>"></div>
+                            </div>
+                            <p class="text-xs text-neutral-500">PayPal se muestra como boton externo para PayPal o tarjeta. El pedido siempre exige comprobante y queda registrado para transparencia entre socios.</p>
+                            <button type="submit" class="btn-primary w-full">Guardar Tienda</button>
+                        </form>
+                    </div>
+
+                    <div class="bg-neutral-900 rounded-xl p-4"><h3 class="text-lg font-semibold mb-3"><i class="fas fa-eye text-primary mr-2"></i>Visualizacion</h3>
                         <form id="config-display-form" class="space-y-3">
                             <div><label class="block text-sm mb-1">Mínimo para Super Pack</label><input type="number" id="superpack_threshold" class="w-full p-2 bg-neutral-800 rounded" value="<?php echo $settings['superpack_threshold'] ?? 4; ?>"></div>
                             <div class="flex items-center justify-between">
@@ -1267,6 +1463,8 @@ $cdn_audio_enabled = cdn_audio_enabled();
                 if (section === 'users') loadUsers();
                 if (section === 'settings') loadSettings();
                 if (section === 'banners') loadBanners();
+                if (section === 'store') loadStoreProducts();
+                if (section === 'orders') loadStoreOrders();
                 if (window.innerWidth < 768 && navMenu) navMenu.classList.remove('show');
             });
         });
@@ -1280,7 +1478,14 @@ $cdn_audio_enabled = cdn_audio_enabled();
         // ==================== GRÁFICO ====================
         const usersByRole = <?php echo json_encode($system_stats['users_by_role']); ?>;
         const ctx = document.getElementById('rolesChart')?.getContext('2d');
-        if(ctx){ new Chart(ctx,{ type:'doughnut', data:{ labels:usersByRole.map(r=>r.role==='superadmin'?'Super Admin':r.role==='admin'?'Admin':'DJ'), datasets:[{ data:usersByRole.map(r=>r.count), backgroundColor:['#e1261d','#3b82f6','#10b981'], borderWidth:0 }] }, options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{ color:'#fff' } } } } }); }
+        function roleLabel(role) {
+            if (role === 'superadmin') return 'Super Admin';
+            if (role === 'admin') return 'Admin';
+            if (role === 'chat_moderator') return 'Moderador Chat';
+            if (role === 'dj') return 'DJ';
+            return role || 'Usuario';
+        }
+        if(ctx){ new Chart(ctx,{ type:'doughnut', data:{ labels:usersByRole.map(r=>roleLabel(r.role)), datasets:[{ data:usersByRole.map(r=>r.count), backgroundColor:['#e1261d','#3b82f6','#facc15','#10b981','#737373'], borderWidth:0 }] }, options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{ color:'#fff' } } } } }); }
         
         // ==================== VIDEO HERO ====================
         function extractYouTubeId(urlOrId) { if (!urlOrId) return null; if (urlOrId.match(/^[A-Za-z0-9_-]{11}$/)) return urlOrId; const patterns = [ /(?:youtube\.com\/watch\?v=)([^&]+)/i, /(?:youtu\.be\/)([^?]+)/i, /(?:youtube\.com\/embed\/)([^?]+)/i ]; for (let pattern of patterns) { const match = urlOrId.match(pattern); if (match && match[1]) return match[1]; } return null; }
@@ -1289,29 +1494,61 @@ $cdn_audio_enabled = cdn_audio_enabled();
         
         // ==================== CRUD MIXES ====================
         async function deleteMix(id){ if(confirm('¿Eliminar este mix?')){ try{ const res=await fetch('api/delete_mix.php',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id}) }); const data=await res.json(); if(data.success){ showToast('Mix eliminado'); location.reload(); }else showToast(data.error,true); }catch(e){showToast('Error',true);} } }
-        function openMixModal(data=null){ const isEdit=data?.id; const formHtml=`<div class="flex justify-between items-center mb-3"><h3 class="text-lg font-bold">${isEdit?'Editar Mix':'Agregar Mix'}</h3><button onclick="closeModal()" class="text-2xl hover:text-primary">&times;</button></div><form id="itemForm" class="space-y-3"><input type="hidden" name="id" value="${data?.id||''}"><div><label>Título *</label><input type="text" name="title" required value="${escapeHtml(data?.title||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>DJ *</label><input type="text" name="dj" required value="${escapeHtml(data?.dj||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Género *</label><input type="text" name="genre" required value="${escapeHtml(data?.genre||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Ruta audio CDN *</label><input type="text" name="url" required placeholder="MIXES/archivo.mp3" value="${escapeHtml(data?.url||'')}" class="w-full p-2 bg-neutral-800 rounded"><p class="text-xs text-neutral-500 mt-1">Usa ruta relativa. Tambien acepta URL Backblaze/Bunny y se normaliza al guardar.</p></div><div><label>URL de Portada</label><input type="url" name="cover" value="${escapeHtml(data?.cover||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Duración</label><input type="text" name="duration" value="${escapeHtml(data?.duration||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Tamaño MB</label><input type="number" name="sizeMB" value="${data?.sizeMB||0}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Fecha</label><input type="date" name="date" value="${data?.date||''}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label><input type="checkbox" name="active" value="1" ${data?.active!=0?'checked':''}> Activo</label></div><div class="flex gap-2 pt-2"><button type="button" onclick="closeModal()" class="flex-1 p-2 bg-neutral-700 rounded">Cancelar</button><button type="submit" class="flex-1 p-2 bg-primary rounded">Guardar</button></div></form>`; document.getElementById('modalContent').innerHTML=formHtml; document.getElementById('itemModal').classList.add('show'); document.getElementById('itemForm').addEventListener('submit',async(e)=>{ e.preventDefault(); const form=new FormData(e.target); const formData=Object.fromEntries(form); formData.active=form.has('active')?1:0; try{ const res=await fetch('api/save_mix.php',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) }); const result=await res.json(); if(result.success){ showToast('Mix guardado'); closeModal(); location.reload(); }else showToast(result.error,true); }catch(e){showToast('Error',true);} }); }
-        function editMix(id){ fetch('api/get_mix.php?id='+id).then(r=>r.json()).then(data=>openMixModal(data)).catch(e=>showToast('Error',true)); }
+        function openMixModal(data=null){
+            const isEdit = data?.id;
+            const updateNotify = isEdit ? `<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="send_notification" value="1"> Enviar notificacion de actualizacion</label>` : '';
+            const formHtml = `<div class="flex justify-between items-center mb-3"><h3 class="text-lg font-bold">${isEdit?'Editar Mix':'Agregar Mix'}</h3><button onclick="closeModal()" class="text-2xl hover:text-primary">&times;</button></div>
+                <form id="itemForm" class="space-y-3">
+                    <input type="hidden" name="id" value="${data?.id||''}">
+                    <div><label>Titulo *</label><input type="text" name="title" required value="${escapeHtml(data?.title||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                    <div><label>DJ *</label><input type="text" name="dj" required value="${escapeHtml(data?.dj||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                    <div><label>Genero *</label><input type="text" name="genre" required value="${escapeHtml(data?.genre||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                    <div><label>Ruta audio CDN *</label><input type="text" name="url" required placeholder="mixes-mp3/archivo.mp3" value="${escapeHtml(data?.url||'')}" class="w-full p-2 bg-neutral-800 rounded"><p class="text-xs text-neutral-500 mt-1">Usa ruta relativa. Tambien acepta URL Backblaze/Bunny y se normaliza al guardar.</p></div>
+                    <div><label>URL de Portada</label><input type="url" name="cover" value="${escapeHtml(data?.cover||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                    <div><label>Duracion</label><input type="text" name="duration" value="${escapeHtml(data?.duration||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                    <div><label>Tamano MB</label><input type="number" name="sizeMB" value="${data?.sizeMB||0}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                    <div><label>Fecha</label><input type="date" name="date" value="${data?.date||''}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                    ${updateNotify}
+                    <div><label><input type="checkbox" name="active" value="1" ${data?.active!=0?'checked':''}> Activo</label></div>
+                    <div class="flex gap-2 pt-2"><button type="button" onclick="closeModal()" class="flex-1 p-2 bg-neutral-700 rounded">Cancelar</button><button type="submit" class="flex-1 p-2 bg-primary rounded">Guardar</button></div>
+                </form>`;
+            document.getElementById('modalContent').innerHTML = formHtml;
+            document.getElementById('itemModal').classList.add('show');
+            document.getElementById('itemForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = new FormData(e.target);
+                const formData = Object.fromEntries(form);
+                formData.active = form.has('active') ? 1 : 0;
+                formData.send_notification = form.has('send_notification') ? 1 : 0;
+                try {
+                    const res = await fetch('api/save_mix.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) });
+                    const result = await res.json();
+                    if (result.success) { showToast('Mix guardado'); closeModal(); location.reload(); }
+                    else showToast(result.error, true);
+                } catch(e) { showToast('Error', true); }
+            });
+        }        function editMix(id){ fetch('api/get_mix.php?id='+id).then(r=>r.json()).then(data=>openMixModal(data)).catch(e=>showToast('Error',true)); }
         async function toggleMixSuperpack(mixId, currentStatus){ const newStatus=currentStatus?0:1; if(confirm(`¿${newStatus?'Activar':'Desactivar'} Super Pack?`)){ try{ const res=await fetch('api/update_superpack.php',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:mixId,is_superpack:newStatus}) }); const data=await res.json(); if(data.success){ showToast('Super Pack actualizado'); location.reload(); }else showToast(data.error,true); }catch(e){showToast('Error',true);} } }
         
         // ==================== CRUD DJS ====================
         async function deleteDJ(id){ if(confirm('¿Eliminar este DJ?')){ try{ const res=await fetch('api/delete_dj.php',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id}) }); const data=await res.json(); if(data.success){ showToast('DJ eliminado'); location.reload(); }else showToast(data.error,true); }catch(e){showToast('Error',true);} } }
-        function openDJModal(data=null){ const isEdit=data?.id; const formHtml=`<div class="flex justify-between items-center mb-3"><h3 class="text-lg font-bold">${isEdit?'Editar DJ':'Agregar DJ'}</h3><button onclick="closeModal()" class="text-2xl hover:text-primary">&times;</button></div><form id="itemForm" class="space-y-3"><input type="hidden" name="id" value="${data?.id||''}"><div><label>Nombre *</label><input type="text" name="name" required value="${escapeHtml(data?.name||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Género</label><input type="text" name="genre" value="${escapeHtml(data?.genre||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Ciudad</label><input type="text" name="city" value="${escapeHtml(data?.city||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Biografía</label><textarea name="bio" rows="3" class="w-full p-2 bg-neutral-800 rounded">${escapeHtml(data?.bio||'')}</textarea></div><div><label>URL del Avatar</label><input type="url" name="avatar" value="${escapeHtml(data?.avatar||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label><input type="checkbox" name="active" value="1" ${data?.active!=0?'checked':''}> Activo</label></div><div class="flex gap-2 pt-2"><button type="button" onclick="closeModal()" class="flex-1 p-2 bg-neutral-700 rounded">Cancelar</button><button type="submit" class="flex-1 p-2 bg-primary rounded">Guardar</button></div></form>`; document.getElementById('modalContent').innerHTML=formHtml; document.getElementById('itemModal').classList.add('show'); document.getElementById('itemForm').addEventListener('submit',async(e)=>{ e.preventDefault(); const form=new FormData(e.target); const formData=Object.fromEntries(form); formData.active=form.has('active')?1:0; try{ const res=await fetch('api/save_dj.php',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) }); const result=await res.json(); if(result.success){ showToast('DJ guardado'); closeModal(); location.reload(); }else showToast(result.error,true); }catch(e){showToast('Error',true);} }); }
         function openDJModal(data=null){
             const isEdit = data?.id;
             let socials = {};
             try { socials = data?.socials ? JSON.parse(data.socials) : {}; } catch(e) { socials = {}; }
+            const updateNotify = isEdit ? `<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="send_notification" value="1"> Enviar notificacion de actualizacion</label>` : '';
             const formHtml = `<div class="flex justify-between items-center mb-3"><h3 class="text-lg font-bold">${isEdit?'Editar DJ':'Agregar DJ'}</h3><button onclick="closeModal()" class="text-2xl hover:text-primary">&times;</button></div>
                 <form id="itemForm" class="space-y-3">
                     <input type="hidden" name="id" value="${data?.id||''}">
                     <div class="grid md:grid-cols-2 gap-3">
                         <div><label>Nombre *</label><input type="text" name="name" required value="${escapeHtml(data?.name||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
-                        <div><label>Género</label><input type="text" name="genre" value="${escapeHtml(data?.genre||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                        <div><label>Genero</label><input type="text" name="genre" value="${escapeHtml(data?.genre||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
                     </div>
                     <div class="grid md:grid-cols-2 gap-3">
                         <div><label>Ciudad</label><input type="text" name="city" value="${escapeHtml(data?.city||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
                         <div><label>URL del Avatar</label><input type="url" name="avatar" value="${escapeHtml(data?.avatar||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
                     </div>
-                    <div><label>Biografía</label><textarea name="bio" rows="3" class="w-full p-2 bg-neutral-800 rounded">${escapeHtml(data?.bio||'')}</textarea></div>
+                    <div><label>Biografia</label><textarea name="bio" rows="3" class="w-full p-2 bg-neutral-800 rounded">${escapeHtml(data?.bio||'')}</textarea></div>
                     <div class="border-t border-neutral-700 pt-3">
                         <h4 class="font-semibold mb-2">Redes sociales</h4>
                         <div class="grid md:grid-cols-2 gap-3">
@@ -1324,6 +1561,7 @@ $cdn_audio_enabled = cdn_audio_enabled();
                             <div class="md:col-span-2"><label>Web</label><input type="text" name="website" placeholder="# para probar" value="${escapeHtml(socials.website||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
                         </div>
                     </div>
+                    ${updateNotify}
                     <div><label><input type="checkbox" name="active" value="1" ${data?.active!=0?'checked':''}> Activo</label></div>
                     <div class="flex gap-2 pt-2"><button type="button" onclick="closeModal()" class="flex-1 p-2 bg-neutral-700 rounded">Cancelar</button><button type="submit" class="flex-1 p-2 bg-primary rounded">Guardar</button></div>
                 </form>`;
@@ -1334,6 +1572,7 @@ $cdn_audio_enabled = cdn_audio_enabled();
                 const form = new FormData(e.target);
                 const formData = Object.fromEntries(form);
                 formData.active = form.has('active') ? 1 : 0;
+                formData.send_notification = form.has('send_notification') ? 1 : 0;
                 formData.socials = {
                     facebook: formData.facebook || '',
                     youtube: formData.youtube || '',
@@ -1350,14 +1589,44 @@ $cdn_audio_enabled = cdn_audio_enabled();
                     else showToast(result.error, true);
                 } catch(e) { showToast('Error', true); }
             });
-        }
-        function editDJ(id){ fetch('api/get_dj.php?id='+id).then(r=>r.json()).then(data=>openDJModal(data)).catch(e=>showToast('Error',true)); }
+        }        function editDJ(id){ fetch('api/get_dj.php?id='+id).then(r=>r.json()).then(data=>openDJModal(data)).catch(e=>showToast('Error',true)); }
         async function toggleDJSuperpack(djName){ if(confirm(`¿Activar/Desactivar Super Pack para ${djName}?`)){ try{ const res=await fetch('api/toggle_superpack.php',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dj:djName}) }); const data=await res.json(); if(data.success){ showToast(data.message); location.reload(); }else showToast(data.error,true); }catch(e){showToast('Error',true);} } }
         
         // ==================== CRUD VIDEOS ====================
         async function deleteVideo(id){ if(confirm('¿Eliminar este video?')){ try{ const res=await fetch('api/delete_video.php',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id}) }); const data=await res.json(); if(data.success){ showToast('Video eliminado'); location.reload(); }else showToast(data.error,true); }catch(e){showToast('Error',true);} } }
-        function openVideoModal(data=null){ const isEdit=data&&data.id; const type=data?.type||'mp4'; const formHtml=`<div class="flex justify-between items-center mb-3"><h3 class="text-lg font-bold">${isEdit?'Editar Video':'Agregar Video'}</h3><button onclick="closeModal()" class="text-2xl hover:text-primary">&times;</button></div><form id="itemForm" class="space-y-3"><input type="hidden" name="id" value="${data?.id||''}"><div><label>Título *</label><input type="text" name="title" required value="${escapeHtml(data?.title||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>DJ *</label><input type="text" name="dj" required value="${escapeHtml(data?.dj||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Tipo de Video</label><select name="type" class="w-full p-2 bg-neutral-800 rounded"><option value="mp4" ${type==='mp4'?'selected':''}>MP4</option><option value="youtube" ${type==='youtube'?'selected':''}>YouTube</option></select></div><div><label>URL del Video *</label><input type="url" name="url" required value="${escapeHtml(data?.url||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Miniatura</label><input type="url" name="cover" value="${escapeHtml(data?.cover||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Duración</label><input type="text" name="duration" value="${escapeHtml(data?.duration||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label><input type="checkbox" name="active" value="1" ${data?.active!=0?'checked':''}> Activo</label></div><div class="flex gap-2 pt-2"><button type="button" onclick="closeModal()" class="flex-1 p-2 bg-neutral-700 rounded">Cancelar</button><button type="submit" class="flex-1 p-2 bg-primary rounded">Guardar</button></div></form>`; document.getElementById('modalContent').innerHTML=formHtml; document.getElementById('itemModal').classList.add('show'); document.getElementById('itemForm').addEventListener('submit',async(e)=>{ e.preventDefault(); const form=new FormData(e.target); const formData=Object.fromEntries(form); formData.active=form.has('active')?1:0; try{ const res=await fetch('api/save_video.php',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) }); const result=await res.json(); if(result.success){ showToast('Video guardado'); closeModal(); location.reload(); }else showToast(result.error,true); }catch(e){showToast('Error',true);} }); }
-        function editVideo(id){ fetch('api/get_video.php?id='+id).then(r=>r.json()).then(data=>openVideoModal(data)).catch(e=>showToast('Error',true)); }
+        function openVideoModal(data=null){
+            const isEdit = data && data.id;
+            const type = data?.type || 'mp4';
+            const updateNotify = isEdit ? `<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="send_notification" value="1"> Enviar notificacion de actualizacion</label>` : '';
+            const formHtml = `<div class="flex justify-between items-center mb-3"><h3 class="text-lg font-bold">${isEdit?'Editar Video':'Agregar Video'}</h3><button onclick="closeModal()" class="text-2xl hover:text-primary">&times;</button></div>
+                <form id="itemForm" class="space-y-3">
+                    <input type="hidden" name="id" value="${data?.id||''}">
+                    <div><label>Titulo *</label><input type="text" name="title" required value="${escapeHtml(data?.title||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                    <div><label>DJ *</label><input type="text" name="dj" required value="${escapeHtml(data?.dj||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                    <div><label>Tipo de Video</label><select name="type" class="w-full p-2 bg-neutral-800 rounded"><option value="mp4" ${type==='mp4'?'selected':''}>MP4</option><option value="youtube" ${type==='youtube'?'selected':''}>YouTube</option></select></div>
+                    <div><label>URL del Video *</label><input type="url" name="url" required value="${escapeHtml(data?.url||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                    <div><label>Miniatura</label><input type="url" name="cover" value="${escapeHtml(data?.cover||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                    <div><label>Duracion</label><input type="text" name="duration" value="${escapeHtml(data?.duration||'')}" class="w-full p-2 bg-neutral-800 rounded"></div>
+                    ${updateNotify}
+                    <div><label><input type="checkbox" name="active" value="1" ${data?.active!=0?'checked':''}> Activo</label></div>
+                    <div class="flex gap-2 pt-2"><button type="button" onclick="closeModal()" class="flex-1 p-2 bg-neutral-700 rounded">Cancelar</button><button type="submit" class="flex-1 p-2 bg-primary rounded">Guardar</button></div>
+                </form>`;
+            document.getElementById('modalContent').innerHTML = formHtml;
+            document.getElementById('itemModal').classList.add('show');
+            document.getElementById('itemForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = new FormData(e.target);
+                const formData = Object.fromEntries(form);
+                formData.active = form.has('active') ? 1 : 0;
+                formData.send_notification = form.has('send_notification') ? 1 : 0;
+                try {
+                    const res = await fetch('api/save_video.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) });
+                    const result = await res.json();
+                    if (result.success) { showToast('Video guardado'); closeModal(); location.reload(); }
+                    else showToast(result.error, true);
+                } catch(e) { showToast('Error', true); }
+            });
+        }        function editVideo(id){ fetch('api/get_video.php?id='+id).then(r=>r.json()).then(data=>openVideoModal(data)).catch(e=>showToast('Error',true)); }
         
         // ==================== ÁLBUMES ====================
         function loadAlbumes() { fetch('api/get_albumes.php').then(res=>res.json()).then(albumes=>{ const container=document.getElementById('albumes-list'); const navCount=document.querySelector('[data-section="albumes"] .count'); if(navCount) navCount.textContent=albumes.length; if(albumes.length===0){ container.innerHTML=`<div class="col-span-full text-center py-8 bg-neutral-900 rounded-xl"><i class="fas fa-compact-disc text-5xl text-neutral-600 mb-2"></i><p class="text-neutral-400">No hay álbumes creados</p><button onclick="openAlbumModal()" class="mt-3 btn-primary">Crear primer álbum</button></div>`; return; } container.innerHTML=albumes.map(album=>`<div class="album-card"><div class="relative"><img src="${album.cover || 'assets/img/default-album.jpg'}" class="w-full aspect-square object-cover" onerror="this.src='assets/img/default-album.jpg'"><div class="absolute top-2 right-2 bg-black/70 px-2 py-1 rounded-full text-xs"><i class="fas fa-music mr-1"></i> ${album.total_canciones || 0} temas</div></div><div class="p-3"><h3 class="font-bold text-base truncate">${escapeHtml(album.title)}</h3><p class="text-sm text-neutral-400">${escapeHtml(album.artist)}</p><div class="flex gap-2 mt-2 text-xs"><span class="bg-neutral-800 px-2 py-1 rounded">${album.year || 'Año?'}</span><span class="bg-neutral-800 px-2 py-1 rounded">${album.genre || 'Género?'}</span><span class="bg-neutral-800 px-2 py-1 rounded"><i class="fas fa-download"></i> ${album.download_count || 0}</span></div><div class="flex gap-2 mt-2"><button onclick="editAlbum(${album.id})" class="flex-1 text-blue-400 py-1 rounded border border-neutral-700 text-sm"><i class="fas fa-edit"></i> Editar</button><button onclick="deleteAlbum(${album.id}, '${escapeHtml(album.title)}')" class="flex-1 text-red-400 py-1 rounded border border-neutral-700 text-sm"><i class="fas fa-trash"></i> Eliminar</button></div><button onclick="openCancionesModal(${album.id}, '${escapeHtml(album.title)}')" class="w-full mt-2 bg-primary/20 hover:bg-primary/30 text-primary py-1 rounded text-sm"><i class="fas fa-list-ul"></i> Canciones (${album.total_canciones || 0})</button></div></div>`).join(''); }).catch(err=>console.error('Error cargando álbumes:',err)); }
@@ -1376,6 +1645,15 @@ $cdn_audio_enabled = cdn_audio_enabled();
         function openCancionModal(cancionId=0, cancionData=null){ const isEdit=cancionId>0||(cancionData&&cancionData.id); let formHtml=`<div class="flex justify-between items-center mb-3"><h3 class="text-lg font-bold">${isEdit?'Editar Canción':'Agregar Canción'}</h3><button onclick="closeModal()" class="text-2xl hover:text-primary">&times;</button></div><form id="cancionForm" class="space-y-3"><input type="hidden" name="id" value="${isEdit?(cancionData?.id||cancionId):0}"><input type="hidden" name="album_id" value="${currentCancionAlbumId}"><div><label class="text-sm">Número de pista</label><input type="number" name="track_number" value="${cancionData?.track_number||0}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label class="text-sm">Título *</label><input type="text" name="title" required value="${escapeHtml(cancionData?.title||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label class="text-sm">Duración</label><input type="text" name="duration" value="${cancionData?.duration||''}" placeholder="mm:ss" class="w-full p-2 bg-neutral-800 rounded"></div><div><label class="text-sm">URL MP3 *</label><input type="url" name="url" required value="${escapeHtml(cancionData?.url||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label class="text-sm">Tamaño (MB)</label><input type="number" name="sizeMB" value="${cancionData?.sizeMB||0}" class="w-full p-2 bg-neutral-800 rounded"></div><div class="flex gap-2 pt-2"><button type="button" onclick="closeModal()" class="flex-1 p-2 bg-neutral-700 rounded">Cancelar</button><button type="submit" class="flex-1 p-2 bg-primary rounded">Guardar</button></div></form>`; document.getElementById('modalContent').innerHTML=formHtml; document.getElementById('itemModal').classList.add('show'); document.getElementById('cancionForm').addEventListener('submit',async(e)=>{ e.preventDefault(); const form=new FormData(e.target); const formData=Object.fromEntries(form); try{ const res=await fetch('api/save_cancion.php',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) }); const result=await res.json(); if(result.success){ showToast('Canción guardada'); closeModal(); loadCanciones(currentCancionAlbumId); }else showToast(result.error,true); }catch(e){showToast('Error',true);} }); }
         function deleteCancion(id, title){ if(confirm(`¿Eliminar "${title}"?`)){ fetch('api/delete_cancion.php',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:id}) }).then(res=>res.json()).then(data=>{ if(data.success){ showToast('Canción eliminada'); loadCanciones(currentCancionAlbumId); }else showToast(data.error,true); }); } }
         
+        // ==================== TIENDA SOUVENIR ====================
+        let storeProductsCache = [];
+        function loadStoreProducts(){ fetch('api/get_store_products.php?admin=1').then(r=>r.json()).then(data=>{ const tbody=document.getElementById('store-products-table'); if(!tbody)return; const products=data.products||[]; storeProductsCache=products; if(!products.length){tbody.innerHTML='<tr><td colspan="8" class="text-neutral-500">No hay productos.</td></tr>';return;} tbody.innerHTML=products.map(p=>`<tr><td>${p.id}</td><td><img src="${p.image||'assets/img/default-cover.jpg'}" class="thumbnail" onerror="this.src='assets/img/default-cover.jpg'"></td><td class="max-w-[160px] truncate">${escapeHtml(p.name)}</td><td class="text-primary">$${Number(p.price||0).toFixed(2)}</td><td>${escapeHtml(p.sizes||'-')}</td><td>${p.stock||0}</td><td>${p.active==1?'<span class="status-badge status-active">Activo</span>':'<span class="status-badge status-inactive">Inactivo</span>'}</td><td><button onclick="openStoreProductModalById(${p.id})" class="text-blue-400 mr-2"><i class="fas fa-edit"></i></button><button onclick="deleteStoreProduct(${p.id})" class="text-red-400"><i class="fas fa-trash"></i></button></td></tr>`).join(''); }).catch(()=>showToast('Error cargando productos',true)); }
+        function openStoreProductModalById(id){ const product=storeProductsCache.find(p=>Number(p.id)===Number(id)); openStoreProductModal(product||null); }
+        function openStoreProductModal(data=null){ const formHtml=`<div class="flex justify-between items-center mb-3"><h3 class="text-lg font-bold">${data?.id?'Editar Producto':'Agregar Producto'}</h3><button onclick="closeModal()" class="text-2xl hover:text-primary">&times;</button></div><form id="storeProductForm" class="space-y-3"><input type="hidden" name="id" value="${data?.id||0}"><div><label>Nombre *</label><input name="name" required value="${escapeHtml(data?.name||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Descripcion</label><textarea name="description" rows="3" class="w-full p-2 bg-neutral-800 rounded">${escapeHtml(data?.description||'')}</textarea></div><div class="grid md:grid-cols-3 gap-3"><div><label>Precio *</label><input name="price" type="number" step="0.01" required value="${data?.price||''}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Stock</label><input name="stock" type="number" value="${data?.stock||0}" class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Tallas</label><input name="sizes" placeholder="S,M,L,XL" value="${escapeHtml(data?.sizes||'')}" class="w-full p-2 bg-neutral-800 rounded"></div></div><div><label>URL Imagen</label><input name="image" value="${escapeHtml(data?.image||'')}" class="w-full p-2 bg-neutral-800 rounded"></div><label class="flex items-center gap-2"><input type="checkbox" name="active" ${data?.active!=0?'checked':''}> Activo</label><div class="flex gap-2 pt-2"><button type="button" onclick="closeModal()" class="flex-1 p-2 bg-neutral-700 rounded">Cancelar</button><button class="flex-1 p-2 bg-primary rounded">Guardar</button></div></form>`; document.getElementById('modalContent').innerHTML=formHtml; document.getElementById('itemModal').classList.add('show'); document.getElementById('storeProductForm').addEventListener('submit',async(e)=>{ e.preventDefault(); const form=new FormData(e.target); const payload=Object.fromEntries(form); payload.active=form.has('active')?1:0; const res=await fetch('api/save_store_product.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const result=await res.json(); if(result.success){showToast('Producto guardado'); closeModal(); loadStoreProducts();} else showToast(result.error,true); }); }
+        function deleteStoreProduct(id){ if(confirm('¿Desactivar este producto?')) fetch('api/delete_store_product.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).then(r=>r.json()).then(d=>{if(d.success){showToast('Producto desactivado');loadStoreProducts();}else showToast(d.error,true);}); }
+        function loadStoreOrders(){ fetch('api/get_store_orders.php').then(r=>r.json()).then(data=>{ const tbody=document.getElementById('store-orders-table'); if(!tbody)return; const orders=data.orders||[]; if(!orders.length){tbody.innerHTML='<tr><td colspan="7" class="text-neutral-500">No hay pedidos.</td></tr>';return;} tbody.innerHTML=orders.map(o=>`<tr><td><strong>${escapeHtml(o.order_code)}</strong><br><span class="text-xs text-neutral-500">${o.created_at}</span></td><td>${escapeHtml(o.customer_name)}<br><span class="text-xs text-neutral-500">${escapeHtml(o.customer_phone)}</span></td><td>${(o.items||[]).map(i=>`${escapeHtml(i.product_name)} x${i.quantity} ${i.size?`(${escapeHtml(i.size)})`:''}`).join('<br>')}</td><td>${escapeHtml(o.payment_method)}</td><td class="text-primary font-bold">$${Number(o.total||0).toFixed(2)}</td><td><select onchange="updateStoreOrder(${o.id},this.value)" class="bg-neutral-800 p-1 rounded"><option value="receipt_received" ${o.status==='receipt_received'?'selected':''}>Comprobante</option><option value="paid" ${o.status==='paid'?'selected':''}>Pagado</option><option value="delivered" ${o.status==='delivered'?'selected':''}>Entregado</option><option value="cancelled" ${o.status==='cancelled'?'selected':''}>Cancelado</option></select></td><td>${o.payment_receipt?`<a href="${o.payment_receipt}" target="_blank" class="text-primary">Ver</a>`:'-'}</td></tr>`).join(''); }).catch(()=>showToast('Error cargando pedidos',true)); }
+        function updateStoreOrder(id,status){ fetch('api/update_store_order.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status})}).then(r=>r.json()).then(d=>{if(d.success)showToast('Pedido actualizado');else showToast(d.error,true);}); }
+
         // ==================== BANNERS (PUBLICIDAD) ====================
         function loadBanners() {
             fetch('api/get_banners_admin.php')
@@ -1630,6 +1908,11 @@ $cdn_audio_enabled = cdn_audio_enabled();
         
         document.getElementById('config-general-form')?.addEventListener('submit',async(e)=>{ e.preventDefault(); const data={site_title:document.getElementById('site_title').value,site_description:document.getElementById('site_description').value,footer_text:document.getElementById('footer_text').value}; await saveSettings('general',data); });
         document.getElementById('config-radio-form')?.addEventListener('submit',async(e)=>{ e.preventDefault(); const data={radio_url:document.getElementById('radio_url').value,radio_name:document.getElementById('radio_name').value}; await saveSettings('radio',data); });
+        document.getElementById('config-notifications-form')?.addEventListener('submit',async(e)=>{ e.preventDefault(); const data={admin_notify_email:document.getElementById('admin_notify_email').value,notifications_enabled:document.getElementById('notifications_enabled').checked?'1':'0',notify_new_mixes:document.getElementById('notify_new_mixes').checked?'1':'0',notify_new_videos:document.getElementById('notify_new_videos').checked?'1':'0',notify_new_djs:document.getElementById('notify_new_djs').checked?'1':'0'}; await saveSettings('notifications',data); });
+        document.getElementById('config-push-form')?.addEventListener('submit',async(e)=>{ e.preventDefault(); const data={push_enabled:document.getElementById('push_enabled').checked?'1':'0',push_vapid_subject:document.getElementById('push_vapid_subject').value}; await saveSettings('push',data); loadPushStatus(); });
+        document.getElementById('generate-push-keys')?.addEventListener('click',async()=>{ if(!confirm('Generar nuevas llaves push? Los dispositivos registrados antes podrian tener que activar avisos otra vez.')) return; try{ const res=await fetch('api/push_send.php?action=generate_keys',{method:'POST'}); const result=await res.json(); if(result.success){ showToast('Llaves push generadas'); document.getElementById('push_enabled').checked=true; loadPushStatus(); } else showToast(result.error||'No se pudo generar',true); }catch(e){ showToast('Error generando llaves',true); } });
+        document.getElementById('manual-push-form')?.addEventListener('submit',async(e)=>{ e.preventDefault(); const payload={title:document.getElementById('manual_push_title').value,body:document.getElementById('manual_push_body').value,url:document.getElementById('manual_push_url').value,requireInteraction:true}; try{ const res=await fetch('api/push_send.php?action=send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const result=await res.json(); if(result.success){ const sent=Number(result.sent||0); const failed=Number(result.failed||0); showToast(sent>0?`Aviso enviado: ${sent} enviados, ${failed} fallidos`:`No hay celulares activos para recibir avisos`,sent===0); loadPushStatus(); }else showToast(result.error||'No se pudo enviar',true); }catch(e){ showToast('Error enviando push',true); } });
+        document.getElementById('config-store-form')?.addEventListener('submit',async(e)=>{ e.preventDefault(); const data={store_notify_email_1:document.getElementById('store_notify_email_1').value,store_notify_email_2:document.getElementById('store_notify_email_2').value,store_yappy_info:document.getElementById('store_yappy_info').value,store_ach_info:document.getElementById('store_ach_info').value,store_paypal_email:document.getElementById('store_paypal_email').value,store_paypal_url:document.getElementById('store_paypal_url').value}; await saveSettings('store',data); });
         document.getElementById('config-display-form')?.addEventListener('submit',async(e)=>{ e.preventDefault(); const data={superpack_threshold:document.getElementById('superpack_threshold').value,maintenance_mode:document.getElementById('maintenance_mode').checked?'1':'0'}; await saveSettings('display',data); });
         document.getElementById('config-guia-form')?.addEventListener('submit',async(e)=>{ e.preventDefault(); const data={guia_title:document.getElementById('guia_title').value,guia_whatsapp:document.getElementById('guia_whatsapp').value}; await saveSettings('guia',data); });
         
@@ -1639,9 +1922,12 @@ $cdn_audio_enabled = cdn_audio_enabled();
         // ==================== USUARIOS ====================
         function showChangePasswordModal(id, username) { document.getElementById('change-user-id').value = id; document.getElementById('change-username').value = username; document.getElementById('new-password-admin').value = ''; document.getElementById('confirm-password-admin').value = ''; document.getElementById('passwordModal').classList.add('show'); }
         function deleteUser(id){ if(confirm('¿Desactivar este usuario?')){ fetch('api/delete_user.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).then(r=>r.json()).then(data=>{if(data.success){showToast('Usuario desactivado');location.reload();}else showToast(data.error,true);}).catch(e=>showToast('Error',true)); } }
-        function loadUsers() { fetch('api/get_users.php').then(res=>res.json()).then(users=>{ const tbody=document.getElementById('users-table'); if(tbody && users.length>0){ tbody.innerHTML=users.map(user=>`<tr class="border-b"><td class="p-2">${user.id}<\/td><td class="p-2">${escapeHtml(user.username)}<\/td><td class="p-2">${escapeHtml(user.email)}<\/td><td class="p-2">${user.role==='superadmin'?'Super Admin':user.role==='admin'?'Admin':user.role}<\/td><td class="p-2"><span class="status-badge ${user.active?'status-active':'status-inactive'}">${user.active?'Activo':'Inactivo'}</span><\/td><td class="p-2"><button onclick="showChangePasswordModal(${user.id},'${escapeHtml(user.username)}')" class="text-yellow-400 mr-1"><i class="fas fa-key"><\/i><\/button><button onclick="deleteUser(${user.id})" class="text-red-400"><i class="fas fa-trash"><\/i><\/button><\/td><\/tr>`).join(''); } }).catch(err=>console.error('Error cargando usuarios:',err)); }
-        function loadSettings() { fetch('api/get_settings.php').then(res=>res.json()).then(settings=>{ if(settings.site_title) document.getElementById('site_title').value=settings.site_title; if(settings.site_description) document.getElementById('site_description').value=settings.site_description; if(settings.footer_text) document.getElementById('footer_text').value=settings.footer_text; if(settings.radio_url) document.getElementById('radio_url').value=settings.radio_url; if(settings.radio_name) document.getElementById('radio_name').value=settings.radio_name; if(settings.superpack_threshold) document.getElementById('superpack_threshold').value=settings.superpack_threshold; if(settings.maintenance_mode) document.getElementById('maintenance_mode').checked=settings.maintenance_mode==1; if(settings.guia_title) document.getElementById('guia_title').value=settings.guia_title; if(settings.guia_whatsapp) document.getElementById('guia_whatsapp').value=settings.guia_whatsapp; }).catch(err=>console.error('Error cargando configuración:',err)); }
+        function loadUsers() { fetch('api/get_users.php').then(res=>res.json()).then(users=>{ const tbody=document.getElementById('users-table'); if(tbody && users.length>0){ tbody.innerHTML=users.map(user=>`<tr class="border-b"><td class="p-2">${user.id}<\/td><td class="p-2">${escapeHtml(user.username)}<\/td><td class="p-2">${escapeHtml(user.email)}<\/td><td class="p-2">${roleLabel(user.role)}<\/td><td class="p-2"><span class="status-badge ${user.active?'status-active':'status-inactive'}">${user.active?'Activo':'Inactivo'}</span><\/td><td class="p-2"><button onclick="showChangePasswordModal(${user.id},'${escapeHtml(user.username)}')" class="text-yellow-400 mr-1"><i class="fas fa-key"><\/i><\/button><button onclick="deleteUser(${user.id})" class="text-red-400"><i class="fas fa-trash"><\/i><\/button><\/td><\/tr>`).join(''); } }).catch(err=>console.error('Error cargando usuarios:',err)); }
+        function loadSettings() { fetch('api/get_settings.php').then(res=>res.json()).then(settings=>{ const asBool=(value,fallback=true)=>value===undefined?fallback:(value==1||value==='1'||value===true||value==='true'); if(settings.site_title) document.getElementById('site_title').value=settings.site_title; if(settings.site_description) document.getElementById('site_description').value=settings.site_description; if(settings.footer_text) document.getElementById('footer_text').value=settings.footer_text; if(settings.radio_url) document.getElementById('radio_url').value=settings.radio_url; if(settings.radio_name) document.getElementById('radio_name').value=settings.radio_name; if(settings.admin_notify_email!==undefined) document.getElementById('admin_notify_email').value=settings.admin_notify_email; if(document.getElementById('notifications_enabled')) document.getElementById('notifications_enabled').checked=asBool(settings.notifications_enabled,true); if(document.getElementById('notify_new_mixes')) document.getElementById('notify_new_mixes').checked=asBool(settings.notify_new_mixes,true); if(document.getElementById('notify_new_videos')) document.getElementById('notify_new_videos').checked=asBool(settings.notify_new_videos,true); if(document.getElementById('notify_new_djs')) document.getElementById('notify_new_djs').checked=asBool(settings.notify_new_djs,true); if(settings.superpack_threshold) document.getElementById('superpack_threshold').value=settings.superpack_threshold; if(settings.maintenance_mode) document.getElementById('maintenance_mode').checked=settings.maintenance_mode==1; if(settings.guia_title) document.getElementById('guia_title').value=settings.guia_title; if(settings.guia_whatsapp) document.getElementById('guia_whatsapp').value=settings.guia_whatsapp; }).catch(err=>console.error('Error cargando configuración:',err)); }
         
+        function loadPushStatus(){ fetch('api/push_send.php?action=status').then(res=>res.json()).then(data=>{ const status=document.getElementById('push-status'); const devices=document.getElementById('push-devices'); if(!status)return; const active=Number(data.activeSubscriptions||0); status.textContent=data.hasKeys?(data.enabled?(active>0?'Push activo y configurado':'Push activo, esperando celulares con avisos activados'):'Push configurado pero apagado'):'Faltan llaves push'; if(devices)devices.textContent=`Celulares activos: ${active}`; }).catch(()=>{ const status=document.getElementById('push-status'); if(status)status.textContent='No se pudo leer el estado push'; }); }
+        loadPushStatus();
+
         // ==================== CAMBIAR CONTRASEÑA ====================
         document.getElementById('change-password-form')?.addEventListener('submit',async(e)=>{ e.preventDefault(); const current=document.getElementById('current-password').value; const newPass=document.getElementById('new-password').value; const confirm=document.getElementById('confirm-password').value; if(newPass!==confirm)return showToast('Las contraseñas no coinciden',true); if(newPass.length<6)return showToast('Mínimo 6 caracteres',true); try{ const res=await fetch('api/change_password.php',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({current,new_password:newPass}) }); const result=await res.json(); if(result.success){ showToast('Contraseña actualizada'); document.getElementById('change-password-form').reset(); }else showToast(result.error,true); }catch(e){showToast('Error',true);} });
         document.getElementById('change-password-admin-form')?.addEventListener('submit', async (e) => { e.preventDefault(); const userId = document.getElementById('change-user-id').value; const newPassword = document.getElementById('new-password-admin').value; const confirm = document.getElementById('confirm-password-admin').value; if (newPassword !== confirm) return showToast('Las contraseñas no coinciden', true); if (newPassword.length < 6) return showToast('Mínimo 6 caracteres', true); try { const res = await fetch('api/change_password.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId, new_password: newPassword }) }); const result = await res.json(); if (result.success) { showToast('Contraseña actualizada'); closePasswordModal(); } else showToast(result.error, true); } catch(e) { showToast('Error de conexión', true); } });
@@ -1652,15 +1938,79 @@ $cdn_audio_enabled = cdn_audio_enabled();
         function optimizeDatabase(){ if(confirm('¿Optimizar BD?')){ fetch('api/optimize.php',{method:'POST'}).then(r=>r.json()).then(data=>{if(data.success)showToast('BD optimizada');else showToast('Error',true);}); } }
         
         // ==================== COMPARTIR ====================
-        function shareMix(id, title, dj) { const url = `${window.location.origin}/panda-truck-v2/player/index.php?id=${id}`; const message = `🎵 *NUEVO MIX EN PANDA TRUCK RELOADED!* 🎵\n\n🎧 *${title}*\n🎚️ Por: *${dj}*\n\n🔗 Escúchalo aquí: ${url}`; window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank'); }
-        function shareVideo(id, title, dj) { const url = `${window.location.origin}/panda-truck-v2/player/video.php?id=${id}`; const message = `🎬 *NUEVO VIDEO EN PANDA TRUCK RELOADED!* 🎬\n\n🎥 *${title}*\n🎚️ Por: *${dj}*\n\n🔗 Míralo aquí: ${url}`; window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank'); }
-        function shareDJ(id, name) { const url = `${window.location.origin}/panda-truck-v2/dj/perfil.php?dj=${encodeURIComponent(name)}`; const message = `🎧 *DJ ${name} en Panda Truck Reloaded!* 🎧\n\n🎵 Escucha todos sus mixes aquí:\n${url}`; window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank'); }
+        async function getShareData(type, id) {
+            const fallback = { title: '', artist: '', image: '', url: `${window.location.origin}/`, type };
+            try {
+                const res = await fetch(`api/share_data.php?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`);
+                const data = await res.json();
+                return data && data.url ? data : fallback;
+            } catch (e) {
+                return fallback;
+            }
+        }
+
+        function openWhatsappShare(message) {
+            window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+        }
+
+        async function shareMix(id, title, dj) {
+            const data = await getShareData('mix', id);
+            const message = `*NUEVO MIX EN PANDA TRUCK RELOADED!*\n\n*${data.title || title}*\nPor: *${data.artist || dj}*\n\nEscuchalo aqui:\n${data.url}`;
+            openWhatsappShare(message);
+        }
+
+        async function shareVideo(id, title, dj) {
+            const data = await getShareData('video', id);
+            const message = `*NUEVO VIDEO EN PANDA TRUCK RELOADED!*\n\n*${data.title || title}*\nPor: *${data.artist || dj}*\n\nMiralo aqui:\n${data.url}`;
+            openWhatsappShare(message);
+        }
+
+        async function shareDJ(id, name) {
+            const data = await getShareData('dj', id);
+            const message = `*DJ ${name} en Panda Truck Reloaded!*\n\nEscucha todos sus mixes aqui:\n${data.url}`;
+            openWhatsappShare(message);
+        }
         
         // ==================== EVENTOS (Placeholder) ====================
         function openEventModal(){showToast('En desarrollo',true);}
         function editEvent(id){showToast('En desarrollo',true);}
         function deleteEvent(id){showToast('En desarrollo',true);}
-        function openUserModal(){showToast('En desarrollo',true);}
+        function openUserModal(){
+            const formHtml = `<div class="flex justify-between items-center mb-3"><h3 class="text-lg font-bold">Nuevo Usuario</h3><button onclick="closeModal()" class="text-2xl hover:text-primary">&times;</button></div>
+                <form id="userForm" class="space-y-3">
+                    <div><label class="text-sm">Usuario *</label><input name="username" required class="w-full p-2 bg-neutral-800 rounded"></div>
+                    <div><label class="text-sm">Email *</label><input name="email" type="email" required class="w-full p-2 bg-neutral-800 rounded"></div>
+                    <div><label class="text-sm">Contraseña *</label><input name="password" type="password" minlength="6" required class="w-full p-2 bg-neutral-800 rounded"></div>
+                    <div><label class="text-sm">Rol *</label><select name="role" class="w-full p-2 bg-neutral-800 rounded">
+                        <option value="chat_moderator">Moderador Chat - solo chat</option>
+                        <option value="admin">Admin - panel general</option>
+                        <option value="dj">DJ</option>
+                        <option value="viewer">Viewer</option>
+                    </select></div>
+                    <p class="text-xs text-neutral-500">Para alguien que solo moderara el chat, usa Moderador Chat.</p>
+                    <div class="flex gap-2 pt-2"><button type="button" onclick="closeModal()" class="flex-1 p-2 bg-neutral-700 rounded">Cancelar</button><button class="flex-1 p-2 bg-primary rounded">Crear</button></div>
+                </form>`;
+            document.getElementById('modalContent').innerHTML = formHtml;
+            document.getElementById('itemModal').classList.add('show');
+            document.getElementById('userForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = new FormData(e.target);
+                const payload = Object.fromEntries(form);
+                try {
+                    const res = await fetch('api/create_user.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                    const result = await res.json();
+                    if (result.success) {
+                        showToast('Usuario creado');
+                        closeModal();
+                        loadUsers();
+                    } else {
+                        showToast(result.error || 'No se pudo crear', true);
+                    }
+                } catch(e) {
+                    showToast('Error de conexion', true);
+                }
+            });
+        }
         
         // ==================== INICIALIZAR ====================
         loadAlbumes();

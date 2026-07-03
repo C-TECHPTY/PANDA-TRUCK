@@ -21,6 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_email'] = $user['email'];
             $_SESSION['user_role'] = $user['role'];
             
+            if (($user['role'] ?? '') === 'chat_moderator') {
+                header('Location: admin/chat.php');
+                exit;
+            }
+
             header('Location: dashboard.php');
             exit;
         } else {
@@ -39,6 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Login - Panda Truck Reloaded</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png">
+    <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
 </head>
 <body class="bg-neutral-950 text-white min-h-screen flex items-center justify-center">
     <div class="bg-neutral-900 rounded-2xl p-8 max-w-md w-full mx-4 border border-neutral-800">

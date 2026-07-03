@@ -4,6 +4,10 @@ require_once '../includes/config.php';
 
 $db = getDB();
 
+$stmt = $db->query("SELECT config_value FROM configuration WHERE config_key = 'radio_url'");
+$radio = $stmt->fetch();
+$radio_url = $radio['config_value'] ?? 'https://stream.zeno.fm/vjsa6jiwafavv';
+
 $mix_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 // Obtener el mix específico si hay ID
@@ -25,6 +29,14 @@ $all_mixes = $stmt->fetchAll();
 if (!$current_mix && count($all_mixes) > 0) {
     $current_mix = $all_mixes[0];
 }
+
+$shareTitle = $current_mix ? $current_mix['title'] . ' - Panda Truck Reloaded' : 'Reproductor - Panda Truck Reloaded';
+$shareDescription = $current_mix ? 'Escucha ' . $current_mix['title'] . ' por ' . $current_mix['dj'] . ' en Panda Truck Reloaded.' : 'Escucha los mixes de Panda Truck Reloaded.';
+$shareImage = $current_mix && !empty($current_mix['cover']) ? $current_mix['cover'] : '../assets/img/default-cover.jpg';
+if (strpos($shareImage, 'http://') !== 0 && strpos($shareImage, 'https://') !== 0) {
+    $shareImage = SITE_URL . ltrim(str_replace('../', '', $shareImage), '/');
+}
+$shareUrl = SITE_URL . 'player/index.php' . ($current_mix ? '?id=' . (int)$current_mix['id'] : '');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -32,8 +44,22 @@ if (!$current_mix && count($all_mixes) > 0) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title><?php echo $current_mix ? htmlspecialchars($current_mix['title']) : 'Reproductor'; ?> - Panda Truck Reloaded</title>
+    <meta name="description" content="<?php echo htmlspecialchars($shareDescription); ?>">
+    <meta property="og:type" content="music.song">
+    <meta property="og:title" content="<?php echo htmlspecialchars($shareTitle); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars($shareDescription); ?>">
+    <meta property="og:image" content="<?php echo htmlspecialchars($shareImage); ?>">
+    <meta property="og:url" content="<?php echo htmlspecialchars($shareUrl); ?>">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?php echo htmlspecialchars($shareTitle); ?>">
+    <meta name="twitter:description" content="<?php echo htmlspecialchars($shareDescription); ?>">
+    <meta name="twitter:image" content="<?php echo htmlspecialchars($shareImage); ?>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png">
+    <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
     <style>
         :root {
             --primary: #e1261d;
@@ -298,6 +324,13 @@ if (!$current_mix && count($all_mixes) > 0) {
                                     <i class="fas fa-download text-xs sm:text-sm"></i>
                                 </a>
                             </div>
+                            <div class="absolute top-3 left-3 sm:top-4 sm:left-4">
+                                <button id="player-like-btn" type="button" class="mix-like-btn min-w-14 h-8 sm:h-10 rounded-full bg-black/70 px-3 backdrop-blur flex items-center justify-center gap-1 text-neutral-400 hover:text-red-500 transition active:scale-95"
+                                        data-mix-id="<?php echo (int)($current_mix['id'] ?? 0); ?>" data-liked="0" aria-pressed="false" title="Me gusta">
+                                    <i class="far fa-heart text-xs sm:text-sm"></i>
+                                    <span class="mix-like-count text-xs sm:text-sm">0</span>
+                                </button>
+                            </div>
                             <div class="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4">
                                 <div class="bg-black/70 backdrop-blur rounded-lg p-2 sm:p-3">
                                     <h1 id="track-title" class="text-sm sm:text-base md:text-lg font-bold truncate"><?php echo htmlspecialchars($current_mix['title'] ?? 'Selecciona un mix'); ?></h1>
@@ -397,6 +430,10 @@ if (!$current_mix && count($all_mixes) > 0) {
                                         <div class="text-xs text-neutral-500 mt-0.5 sm:mt-1 flex items-center gap-2">
                                             <span><?php echo $mix['duration'] ?? '00:00'; ?></span>
                                             <span>•</span>
+                                            <button type="button" class="mix-like-btn hover:text-red-500 transition" data-mix-id="<?php echo (int)$mix['id']; ?>" data-liked="0" aria-pressed="false" title="Me gusta">
+                                                <i class="far fa-heart"></i> <span class="mix-like-count">0</span>
+                                            </button>
+                                            <span>•</span>
                                             <span><?php echo $mix['sizeMB'] ?? 0; ?> MB</span>
                                         </div>
                                     </div>
@@ -433,11 +470,17 @@ if (!$current_mix && count($all_mixes) > 0) {
             .xs\:hidden { display: inline; }
         }
     </style>
+    <script src="../assets/js/mix-likes.js" data-api-base="../api"></script>
+    <script src="../assets/js/pwa.js?v=20260702-push"></script>
     
     <script>
         // Elementos del DOM
         const audio = new Audio();
         audio.preload = 'none';
+        const radioAudio = new Audio();
+        radioAudio.preload = 'none';
+        radioAudio.src = <?php echo json_encode($radio_url); ?>;
+        radioAudio.volume = 0.7;
         const playBtn = document.getElementById('play-btn');
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
@@ -459,6 +502,7 @@ if (!$current_mix && count($all_mixes) > 0) {
         let isPlaying = false;
         let isShuffle = false;
         let isRepeat = false;
+        let userRequestedPause = false;
         
         // Cargar playlist desde PHP
         <?php 
@@ -497,6 +541,7 @@ if (!$current_mix && count($all_mixes) > 0) {
             audio.addEventListener('timeupdate', updateProgress);
             audio.addEventListener('ended', nextTrack);
             audio.addEventListener('play', () => {
+                pauseRadioForMix();
                 updatePlayButton(true);
                 playBtn.classList.add('playing-pulse');
                 countPlay(playlist[currentIndex].id);
@@ -504,6 +549,10 @@ if (!$current_mix && count($all_mixes) > 0) {
             audio.addEventListener('pause', () => {
                 updatePlayButton(false);
                 playBtn.classList.remove('playing-pulse');
+                if (userRequestedPause) {
+                    userRequestedPause = false;
+                    resumeRadioAfterMix();
+                }
             });
             audio.addEventListener('loadedmetadata', () => {
                 durationSpan.textContent = formatTime(audio.duration);
@@ -583,6 +632,18 @@ if (!$current_mix && count($all_mixes) > 0) {
                 body: JSON.stringify({ itemId: mixId, itemType: 'mix', action: 'play' })
             }).catch(err => console.error('Error:', err));
         }
+
+        function pauseRadioForMix() {
+            if (!radioAudio.paused) {
+                radioAudio.pause();
+            }
+        }
+
+        function resumeRadioAfterMix() {
+            radioAudio.play().catch(e => {
+                console.log('Radio bloqueada al reanudar:', e);
+            });
+        }
         
         function loadTrack(index) {
             if (index < 0) index = 0;
@@ -629,6 +690,13 @@ if (!$current_mix && count($all_mixes) > 0) {
             if (downloadLink) {
                 downloadLink.href = `../api/download_mix.php?id=${track.id}`;
             }
+            const playerLikeBtn = document.getElementById('player-like-btn');
+            if (playerLikeBtn) {
+                playerLikeBtn.dataset.mixId = track.id;
+                if (window.PandaMixLikes) {
+                    window.PandaMixLikes.refresh();
+                }
+            }
         }
         
         function togglePlay() {
@@ -636,6 +704,7 @@ if (!$current_mix && count($all_mixes) > 0) {
                 audio.play();
                 isPlaying = true;
             } else {
+                userRequestedPause = true;
                 audio.pause();
                 isPlaying = false;
             }

@@ -1,0 +1,25 @@
+{
+  "name": "Panda Truck Reloaded",
+  "short_name": "Panda Truck",
+  "description": "La casa de los DJs en Panama",
+  "start_url": "/index.php?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#e1261d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/img/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/img/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
