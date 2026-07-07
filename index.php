@@ -457,7 +457,7 @@ try {
                     </div>
                 </div>
                 <div class="live-chat-launch">
-                    <a href="sala-chat.php" class="live-chat-open" data-chat-open>
+                    <a href="sala-chat.php" class="live-chat-open">
                         <i class="fas fa-comments"></i>
                         <span>Ingresa a nuestra sala de chat y manda tus saludos</span>
                     </a>
@@ -753,77 +753,8 @@ try {
         </div>
     </footer>
     
-    <div data-live-chat data-api-base="api/chat">
-        <div class="live-chat-overlay" data-chat-overlay></div>
-        <aside class="live-chat-panel" data-chat-panel aria-label="Sala de chat en vivo">
-            <div class="live-chat-header">
-                <div class="live-chat-top">
-                    <div class="live-chat-title">
-                        <div class="live-chat-title-icon"><i class="fas fa-comments"></i></div>
-                        <div>
-                            <strong>Sala en vivo</strong>
-                            <span>Saluda, pide tu complacencia y acompaña a los DJs</span>
-                        </div>
-                    </div>
-                    <button type="button" class="live-chat-close" data-chat-close aria-label="Cerrar chat">
-                        <i class="fas fa-times"></i>
-                </button>
-                </div>
-                <div class="live-chat-rules" data-chat-rules>Respeta a los DJs y a los oyentes.</div>
-                <div class="live-chat-pinned hidden" data-chat-pinned></div>
-                <div class="live-chat-live" data-chat-live>
-                    <div>
-                        <span class="live-chat-live-kicker">EN VIVO</span>
-                        <strong data-chat-live-title>Ahora en vivo</strong>
-                        <small data-chat-live-subtitle>Panda Truck Reloaded</small>
-                    </div>
-                    <span class="live-chat-listeners" data-chat-listeners>0 oyentes</span>
-                </div>
-            </div>
-            <div class="live-chat-identity">
-                <label class="live-chat-name-field">
-                    <span>Tu nombre para participar</span>
-                    <input type="text" data-chat-name maxlength="40" placeholder="Ejemplo: Carlos507">
-                </label>
-                <button type="button" class="live-chat-save-name" data-chat-save-name aria-label="Guardar nombre">
-                    <i class="fas fa-check"></i>
-                </button>
-            </div>
-            <div class="live-chat-messages" data-chat-messages>
-                <div class="live-chat-empty">Todavia no hay mensajes. Se el primero en mandar un saludo.</div>
-            </div>
-            <div class="live-chat-poll hidden" data-chat-poll></div>
-            <div class="live-chat-composer">
-                <div class="live-chat-inline-reactions" data-chat-inline-reactions aria-label="Reacciones rapidas"></div>
-                <div class="live-chat-quick-emojis" aria-label="Emojis rapidos">
-                    <button type="button" data-chat-emoji="🔥">🔥</button>
-                    <button type="button" data-chat-emoji="❤️">❤️</button>
-                    <button type="button" data-chat-emoji="😂">😂</button>
-                    <button type="button" data-chat-emoji="😍">😍</button>
-                    <button type="button" data-chat-emoji="👏">👏</button>
-                    <button type="button" data-chat-emoji="🎶">🎶</button>
-                </div>
-                <form class="live-chat-form" data-chat-form>
-                    <input type="text" data-chat-input maxlength="500" autocomplete="off" placeholder="Escribe tu saludo o complacencia...">
-                    <button type="submit" aria-label="Enviar mensaje"><i class="fas fa-paper-plane"></i></button>
-                </form>
-                <button type="button" class="live-chat-back-radio" data-chat-close>
-                    <i class="fas fa-radio"></i>
-                    <span>Volver a la radio</span>
-                </button>
-            </div>
-        </aside>
-        <div class="live-chat-reactions" aria-label="Reacciones en vivo">
-            <button type="button" data-chat-reaction="❤️">❤️</button>
-            <button type="button" data-chat-reaction="🔥">🔥</button>
-            <button type="button" data-chat-reaction="👏">👏</button>
-            <button type="button" data-chat-reaction="🎶">🎶</button>
-        </div>
-    </div>
-
     <div id="toast" class="toast"></div>
     <script src="assets/js/mix-likes.js" data-api-base="api"></script>
-    <script src="assets/js/chat.js?v=20260707-chat-nick-toggle"></script>
     <script src="assets/js/pwa.js?v=20260703-push-user-msg"></script>
     
     <script>
