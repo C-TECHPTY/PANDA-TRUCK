@@ -233,6 +233,27 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.live-chat-nick-toggle {
+    display: none;
+    width: 100%;
+    min-height: 38px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 12px;
+    border: 1px solid rgba(225, 38, 29, 0.32);
+    border-radius: 8px;
+    background: rgba(225, 38, 29, 0.1);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.live-chat-nick-toggle i {
+    color: #ff6259;
+    font-size: 12px;
+}
+
 .live-chat-name-field {
     flex: 1;
     min-width: 0;
@@ -746,6 +767,21 @@
 
     .live-chat-identity {
         padding: 10px 12px;
+    }
+
+    .live-chat-nick-toggle {
+        display: flex;
+    }
+
+    .live-chat-identity.is-nick-collapsed {
+        padding: 8px 12px;
+        gap: 0;
+    }
+
+    .live-chat-identity.is-nick-collapsed .live-chat-name-field,
+    .live-chat-identity.is-nick-collapsed .live-chat-save-name,
+    .live-chat-identity.is-nick-collapsed .live-chat-name-confirm {
+        display: none;
     }
 
     .live-chat-messages {

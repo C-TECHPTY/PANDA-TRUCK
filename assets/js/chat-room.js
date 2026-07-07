@@ -34,6 +34,7 @@
     localStorage.setItem('pandaChatClientId', state.clientId);
     els.name.value = state.nickname;
     setupNicknameConfirmation();
+    setupNicknameToggle();
 
     setupRadio();
     renderEmojiPalette();
@@ -121,6 +122,7 @@
                 els.saveName.classList.add('is-locked');
                 localStorage.setItem('pandaChatNickname', state.nickname);
                 updateNicknameConfirmation('', true);
+                setNicknamePanel(false);
             } else {
                 localStorage.removeItem('pandaChatNickname');
                 state.nickname = '';
@@ -128,6 +130,7 @@
                 els.saveName.disabled = false;
                 els.saveName.classList.remove('is-locked');
                 updateNicknameConfirmation('', false);
+                setNicknamePanel(true);
             }
 
             els.rules.textContent = data.settings.rules || '';
@@ -145,6 +148,7 @@
         const nextNickname = nickname();
         const error = validateNickname(nextNickname);
         if (error) {
+            setNicknamePanel(true);
             updateNicknameConfirmation(error, false, true);
             showInlineNotice(error);
             els.name.focus();
@@ -173,6 +177,7 @@
             els.saveName.classList.add('is-locked');
             localStorage.setItem('pandaChatNickname', state.nickname);
             updateNicknameConfirmation(`Nick confirmado: ${state.nickname}`, true);
+            setNicknamePanel(false);
         }).catch(() => updateNicknameConfirmation('Error de conexion al confirmar el nick.', false, true));
     }
 
@@ -227,6 +232,7 @@
         const message = els.input.value.trim();
         if (!message) return;
         if (!state.nicknameLocked) {
+            setNicknamePanel(true);
             showInlineNotice('Primero confirma tu nick con el check. Lo veras antes de guardarlo.');
             els.name.focus();
             return;
@@ -270,6 +276,30 @@
             state.confirmNickname = '';
             updateNicknameConfirmation('', false);
         });
+    }
+
+    function setupNicknameToggle() {
+        const identity = els.name?.closest('.live-chat-identity');
+        if (!identity || identity.querySelector('[data-nickname-toggle]')) return;
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'live-chat-nick-toggle';
+        toggle.dataset.nicknameToggle = '1';
+        identity.prepend(toggle);
+        els.nameToggle = toggle;
+        toggle.addEventListener('click', () => setNicknamePanel(identity.classList.contains('is-nick-collapsed')));
+        setNicknamePanel(!state.nicknameLocked);
+    }
+
+    function setNicknamePanel(open) {
+        const identity = els.name?.closest('.live-chat-identity');
+        if (!identity) return;
+        identity.classList.toggle('is-nick-collapsed', !open);
+        if (els.nameToggle) {
+            const label = state.nicknameLocked && state.nickname ? `Mi nick: ${state.nickname}` : 'Configurar nick';
+            els.nameToggle.innerHTML = `<span>${escapeHtml(label)}</span><i class="fas fa-chevron-${open ? 'up' : 'down'}"></i>`;
+            els.nameToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
     }
 
     function updateNicknameConfirmation(text, confirmed, error) {
