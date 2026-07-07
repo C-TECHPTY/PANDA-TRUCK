@@ -5,7 +5,7 @@ $data = chat_input();
 $clientId = chat_client_id($data['client_id'] ?? ($_GET['client_id'] ?? ''));
 $nickname = $data['nickname'] ?? ($_GET['nickname'] ?? '');
 $deviceHash = $data['device_hash'] ?? ($_GET['device_hash'] ?? '');
-$user = chat_public_user($clientId, $nickname, $deviceHash);
+$user = chat_public_user($clientId, $nickname, $deviceHash, false);
 $settings = chat_settings();
 
 chat_json([

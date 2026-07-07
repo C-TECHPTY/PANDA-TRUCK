@@ -75,7 +75,7 @@ if ($method === 'POST') {
     $data = chat_input();
     $clientId = chat_client_id($data['client_id'] ?? '');
     $deviceHash = chat_device_hash($data['device_hash'] ?? '');
-    $user = chat_public_user($clientId, $data['nickname'] ?? '', $deviceHash);
+    $user = chat_public_user($clientId, $data['nickname'] ?? '', $deviceHash, false);
     if ((int)$user['is_banned'] === 1) {
         chat_json(['success' => false, 'error' => 'No puedes votar en esta sala.'], 403);
     }

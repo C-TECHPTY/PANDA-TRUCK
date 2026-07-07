@@ -100,13 +100,28 @@ if ($action === 'clear_messages') {
     chat_json(['success' => true, 'deleted' => $stmt->rowCount()]);
 }
 
+if ($action === 'reset_nicknames') {
+    chat_require_superadmin();
+    if (!chat_has_column('chat_users', 'nickname_locked')) {
+        chat_json(['success' => false, 'error' => 'Falta ejecutar migrations/live_chat_lock_nickname.sql.'], 422);
+    }
+
+    $stmt = $db->prepare(
+        "UPDATE chat_users
+         SET nickname = '', nickname_locked = 0
+         WHERE nickname_locked = 1 OR nickname <> ''"
+    );
+    $stmt->execute();
+    chat_json(['success' => true, 'updated' => $stmt->rowCount()]);
+}
+
 if ($action === 'rename_user') {
     chat_require_system_admin();
     $id = (int)($data['id'] ?? 0);
-    $nickname = chat_clean_text($data['nickname'] ?? '', 40);
+    $nickname = chat_clean_nickname($data['nickname'] ?? '');
 
-    if ($id <= 0 || $nickname === '') {
-        chat_json(['success' => false, 'error' => 'Falta usuario o nombre.'], 422);
+    if ($id <= 0 || !chat_nickname_is_valid($nickname)) {
+        chat_json(['success' => false, 'error' => 'El nick debe tener de 3 a 40 caracteres e incluir letras.'], 422);
     }
 
     $lockSql = chat_has_column('chat_users', 'nickname_locked') ? ", nickname_locked = 1" : "";

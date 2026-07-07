@@ -136,6 +136,7 @@ $isChatModerator = $sessionRole === 'chat_moderator';
                     <h2 class="font-bold">Mensajes recientes</h2>
                     <div class="flex gap-2">
                         <?php if ($isSuperAdmin): ?>
+                        <button id="reset-nicknames" class="btn btn-danger"><i class="fas fa-user-pen mr-2"></i>Resetear nicks</button>
                         <button id="clear-chat" class="btn btn-danger"><i class="fas fa-broom mr-2"></i>Limpiar chat</button>
                         <?php endif; ?>
                         <button id="refresh" class="btn"><i class="fas fa-rotate"></i></button>
@@ -279,7 +280,7 @@ $isChatModerator = $sessionRole === 'chat_moderator';
                     <div class="user-card p-3 rounded-lg bg-neutral-900 border border-white/5" data-user-id="${user.id}">
                         <div class="flex items-start justify-between gap-2">
                             <div class="min-w-0">
-                                <div class="font-bold truncate">${roleIcon} ${escapeHtml(user.nickname)}</div>
+                                <div class="font-bold truncate">${roleIcon} ${escapeHtml(user.nickname || 'Sin nick')}</div>
                                 <div class="text-xs text-neutral-500 truncate">${escapeHtml(user.last_seen || '')}</div>
                                 ${Number(user.is_banned) === 1 ? `<div class="text-xs text-red-400 mt-1">${escapeHtml(user.banned_reason || 'Baneado')}</div>` : ''}
                             </div>
@@ -391,6 +392,16 @@ $isChatModerator = $sessionRole === 'chat_moderator';
             });
         }
 
+        function resetNicknames() {
+            if (!confirm('Esto dejara todos los nicks del chat en cero. No borra mensajes, usuarios, bans ni roles. Continuar?')) return;
+            if (!confirm('Confirmacion final: los oyentes tendran que escribir y confirmar su nick de nuevo.')) return;
+            post('reset_nicknames', {}).then(result => {
+                if (!result.success) return alert(result.error || 'No se pudieron resetear los nicks.');
+                alert(`Nicks reseteados: ${Number(result.updated || 0)} usuarios.`);
+                loadOverview();
+            });
+        }
+
         function privateMessage(id) {
             const user = users.find(item => Number(item.id) === Number(id));
             const nickname = user ? user.nickname : 'usuario';
@@ -440,6 +451,7 @@ $isChatModerator = $sessionRole === 'chat_moderator';
         }
 
         document.getElementById('refresh').addEventListener('click', loadOverview);
+        document.getElementById('reset-nicknames')?.addEventListener('click', resetNicknames);
         document.getElementById('clear-chat')?.addEventListener('click', clearChat);
         document.getElementById('send-admin-message')?.addEventListener('click', sendAdminMessage);
         document.getElementById('send-push')?.addEventListener('click', sendPushNotice);

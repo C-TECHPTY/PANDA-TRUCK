@@ -108,7 +108,7 @@ try {
     <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
     <link rel="manifest" href="/site.webmanifest">
     <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/chat.css?v=20260701-chat-poll-compact">
+    <link rel="stylesheet" href="assets/css/chat.css?v=20260707-nick-confirm">
     <style>
         :root {
             --primary: #e1261d;
@@ -823,7 +823,7 @@ try {
 
     <div id="toast" class="toast"></div>
     <script src="assets/js/mix-likes.js" data-api-base="api"></script>
-    <script src="assets/js/chat.js?v=20260701-chat-poll-compact"></script>
+    <script src="assets/js/chat.js?v=20260707-nick-confirm"></script>
     <script src="assets/js/pwa.js?v=20260703-push-user-msg"></script>
     
     <script>

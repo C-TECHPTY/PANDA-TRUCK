@@ -84,9 +84,34 @@ function chat_clean_text($value, $max = 500) {
     return $value;
 }
 
-function chat_public_user($clientId, $nickname = '', $deviceHash = '') {
+function chat_clean_nickname($value) {
+    $nickname = chat_clean_text($value, 40);
+    $nickname = preg_replace('/[^\p{L}\p{N} _.-]/u', '', $nickname);
+    $nickname = preg_replace('/\s+/u', ' ', $nickname);
+    return trim($nickname);
+}
+
+function chat_nickname_is_valid($nickname) {
+    $nickname = chat_clean_nickname($nickname);
+    if ($nickname === '') {
+        return false;
+    }
+
+    $length = function_exists('mb_strlen') ? mb_strlen($nickname, 'UTF-8') : strlen($nickname);
+    if ($length < 3 || $length > 40) {
+        return false;
+    }
+
+    if (!preg_match('/[\p{L}]/u', $nickname)) {
+        return false;
+    }
+
+    return (bool)preg_match('/^[\p{L}\p{N}][\p{L}\p{N} _.-]*$/u', $nickname);
+}
+
+function chat_public_user($clientId, $nickname = '', $deviceHash = '', $lockRequestedNickname = true) {
     $db = chat_db();
-    $requestedNickname = chat_clean_text($nickname, 40);
+    $requestedNickname = chat_clean_nickname($nickname);
     $deviceHash = chat_device_hash($deviceHash);
     $ip = $_SERVER['REMOTE_ADDR'] ?? null;
     $hasDeviceHash = chat_has_column('chat_users', 'device_hash');
@@ -130,18 +155,16 @@ function chat_public_user($clientId, $nickname = '', $deviceHash = '') {
     }
 
     if ($user) {
-        $currentNickname = chat_clean_text($user['nickname'] ?? '', 40);
-        if ($currentNickname === '') {
-            $currentNickname = 'Oyente';
-        }
-
-        $isLocked = $hasNicknameLocked ? ((int)($user['nickname_locked'] ?? 0) === 1) : ($currentNickname !== 'Oyente');
+        $currentNickname = chat_clean_nickname($user['nickname'] ?? '');
+        $displayNickname = $currentNickname !== '' ? $currentNickname : 'Oyente';
+        $isLocked = $hasNicknameLocked ? ((int)($user['nickname_locked'] ?? 0) === 1) : ($currentNickname !== '');
         $finalNickname = $currentNickname;
         $lockNickname = $isLocked ? 1 : 0;
 
-        if (!$isLocked && $requestedNickname !== '') {
+        if (!$isLocked && $lockRequestedNickname && chat_nickname_is_valid($requestedNickname)) {
             $finalNickname = $requestedNickname;
             $lockNickname = 1;
+            $displayNickname = $finalNickname;
         }
 
         $sql = "UPDATE chat_users SET client_id = :client_id, nickname = :nickname, last_ip = :ip, last_seen = NOW()";
@@ -167,7 +190,7 @@ function chat_public_user($clientId, $nickname = '', $deviceHash = '') {
         $stmt->execute($params);
 
         $user['client_id'] = $clientId;
-        $user['nickname'] = $finalNickname;
+        $user['nickname'] = $displayNickname;
         $user['nickname_locked'] = $lockNickname;
         $user['last_ip'] = $ip;
         if ($hasDeviceHash && $deviceHash !== '') {
@@ -176,8 +199,8 @@ function chat_public_user($clientId, $nickname = '', $deviceHash = '') {
         return $user;
     }
 
-    $nickname = $requestedNickname !== '' ? $requestedNickname : 'Oyente';
-    $nicknameLocked = $requestedNickname !== '' ? 1 : 0;
+    $nickname = ($lockRequestedNickname && chat_nickname_is_valid($requestedNickname)) ? $requestedNickname : '';
+    $nicknameLocked = $nickname !== '' ? 1 : 0;
 
     if ($hasDeviceHash) {
         $columns = "client_id, device_hash, nickname, last_ip";
@@ -219,7 +242,7 @@ function chat_public_user($clientId, $nickname = '', $deviceHash = '') {
     return [
         'id' => (int)$db->lastInsertId(),
         'client_id' => $clientId,
-        'nickname' => $nickname,
+        'nickname' => $nickname !== '' ? $nickname : 'Oyente',
         'nickname_locked' => $nicknameLocked,
         'role' => 'viewer',
         'is_banned' => 0

@@ -27,11 +27,13 @@
         lastId: 0,
         lastReactionId: 0,
         loading: false,
-        disabled: false
+        disabled: false,
+        confirmNickname: ''
     };
 
     localStorage.setItem('pandaChatClientId', state.clientId);
     els.name.value = state.nickname;
+    setupNicknameConfirmation();
 
     setupRadio();
     renderEmojiPalette();
@@ -75,7 +77,28 @@
     }
 
     function nickname() {
-        return els.name.value.trim().slice(0, 40);
+        return cleanNickname(els.name.value).slice(0, 40);
+    }
+
+    function cleanNickname(value) {
+        return String(value || '')
+            .replace(/\s+/g, ' ')
+            .replace(/[^A-Za-zÀ-ÿÑñ0-9 _.-]/g, '')
+            .trim();
+    }
+
+    function validateNickname(value) {
+        const clean = cleanNickname(value);
+        if (clean.length < 3) {
+            return 'El nick debe tener minimo 3 caracteres.';
+        }
+        if (!/[A-Za-zÀ-ÿÑñ]/.test(clean)) {
+            return 'El nick debe incluir al menos una letra.';
+        }
+        if (!/^[A-Za-zÀ-ÿÑñ0-9]/.test(clean)) {
+            return 'El nick debe empezar con letra o numero.';
+        }
+        return '';
     }
 
     function request(path, options) {
@@ -97,10 +120,14 @@
                 els.saveName.disabled = true;
                 els.saveName.classList.add('is-locked');
                 localStorage.setItem('pandaChatNickname', state.nickname);
+                updateNicknameConfirmation('', true);
             } else {
+                localStorage.removeItem('pandaChatNickname');
+                state.nickname = '';
                 els.name.disabled = false;
                 els.saveName.disabled = false;
                 els.saveName.classList.remove('is-locked');
+                updateNicknameConfirmation('', false);
             }
 
             els.rules.textContent = data.settings.rules || '';
@@ -116,14 +143,37 @@
     function saveName() {
         if (state.nicknameLocked) return;
         const nextNickname = nickname();
-        if (!nextNickname) {
-            showInlineNotice('Escribe tu nombre para participar. Luego quedara fijo en este dispositivo.');
+        const error = validateNickname(nextNickname);
+        if (error) {
+            updateNicknameConfirmation(error, false, true);
+            showInlineNotice(error);
             els.name.focus();
             return;
         }
-        state.nickname = nextNickname;
-        localStorage.setItem('pandaChatNickname', state.nickname);
-        refreshState();
+        if (state.confirmNickname !== nextNickname) {
+            state.confirmNickname = nextNickname;
+            updateNicknameConfirmation(`Asi apareceras en el chat: ${nextNickname}. Toca el check otra vez para confirmar.`, false);
+            return;
+        }
+        request('nickname.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client_id: state.clientId, device_hash: state.deviceHash, nickname: nextNickname })
+        }).then((data) => {
+            if (!data.success) {
+                state.confirmNickname = '';
+                updateNicknameConfirmation(data.error || 'No se pudo confirmar el nick.', false, true);
+                return;
+            }
+            state.nickname = data.user.nickname || nextNickname;
+            state.nicknameLocked = !!data.user.nickname_locked;
+            els.name.value = state.nickname;
+            els.name.disabled = true;
+            els.saveName.disabled = true;
+            els.saveName.classList.add('is-locked');
+            localStorage.setItem('pandaChatNickname', state.nickname);
+            updateNicknameConfirmation(`Nick confirmado: ${state.nickname}`, true);
+        }).catch(() => updateNicknameConfirmation('Error de conexion al confirmar el nick.', false, true));
     }
 
     function loadMessages() {
@@ -176,12 +226,11 @@
         if (state.disabled) return;
         const message = els.input.value.trim();
         if (!message) return;
-        if (!state.nicknameLocked && !nickname()) {
-            showInlineNotice('Primero escribe tu nombre. Solo podras usar un nick por este celular o PC.');
+        if (!state.nicknameLocked) {
+            showInlineNotice('Primero confirma tu nick con el check. Lo veras antes de guardarlo.');
             els.name.focus();
             return;
         }
-        saveName();
         els.input.value = '';
         request('send.php', {
             method: 'POST',
@@ -207,6 +256,29 @@
         item.innerHTML = `<div class="live-chat-bubble"><div class="live-chat-text">${escapeHtml(text)}</div></div>`;
         els.messages.appendChild(item);
         els.messages.scrollTop = els.messages.scrollHeight;
+    }
+
+    function setupNicknameConfirmation() {
+        const identity = els.name?.closest('.live-chat-identity');
+        if (!identity || identity.querySelector('[data-nickname-confirmation]')) return;
+        const notice = document.createElement('div');
+        notice.className = 'live-chat-name-confirm hidden';
+        notice.dataset.nicknameConfirmation = '1';
+        identity.appendChild(notice);
+        els.nameConfirmation = notice;
+        els.name?.addEventListener('input', () => {
+            state.confirmNickname = '';
+            updateNicknameConfirmation('', false);
+        });
+    }
+
+    function updateNicknameConfirmation(text, confirmed, error) {
+        if (!els.nameConfirmation) return;
+        const clean = String(text || '').trim();
+        els.nameConfirmation.textContent = clean;
+        els.nameConfirmation.classList.toggle('hidden', clean === '');
+        els.nameConfirmation.classList.toggle('is-confirmed', !!confirmed);
+        els.nameConfirmation.classList.toggle('is-error', !!error);
     }
 
     function updatePinnedAnnouncement(text) {

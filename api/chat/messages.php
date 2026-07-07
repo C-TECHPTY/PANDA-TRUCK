@@ -3,7 +3,7 @@ require_once __DIR__ . '/_bootstrap.php';
 
 $clientId = chat_client_id($_GET['client_id'] ?? '');
 $afterId = max(0, (int)($_GET['after_id'] ?? 0));
-$user = chat_public_user($clientId, $_GET['nickname'] ?? '', $_GET['device_hash'] ?? '');
+$user = chat_public_user($clientId, $_GET['nickname'] ?? '', $_GET['device_hash'] ?? '', false);
 
 $db = chat_db();
 $featuredSelect = chat_has_column('chat_messages', 'is_featured') ? 'm.is_featured' : '0 AS is_featured';

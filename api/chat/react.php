@@ -17,7 +17,7 @@ if (!in_array($reaction, $allowed, true)) {
     chat_json(['success' => false, 'error' => 'Reaccion invalida.'], 422);
 }
 
-$user = chat_public_user($clientId, $data['nickname'] ?? '', $deviceHash);
+$user = chat_public_user($clientId, $data['nickname'] ?? '', $deviceHash, false);
 if ((int)$user['is_banned'] === 1) {
     chat_json(['success' => false, 'error' => 'No puedes reaccionar en esta sala.'], 403);
 }

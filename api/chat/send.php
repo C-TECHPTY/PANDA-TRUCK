@@ -21,6 +21,10 @@ if ((int)$user['is_banned'] === 1) {
     chat_json(['success' => false, 'error' => $user['banned_reason'] ?: 'No puedes escribir en esta sala.'], 403);
 }
 
+if ((int)($user['nickname_locked'] ?? 0) !== 1) {
+    chat_json(['success' => false, 'error' => 'Confirma tu nick antes de escribir en el chat.'], 422);
+}
+
 $db = chat_db();
 $stmt = $db->prepare(
     "INSERT INTO chat_messages (user_id, nickname, role, message, message_type)
