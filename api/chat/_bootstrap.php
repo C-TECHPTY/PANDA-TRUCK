@@ -109,6 +109,30 @@ function chat_nickname_is_valid($nickname) {
     return (bool)preg_match('/^[\p{L}\p{N}][\p{L}\p{N} _.-]*$/u', $nickname);
 }
 
+function chat_nickname_is_available($nickname, $excludeUserId = 0) {
+    $nickname = chat_clean_nickname($nickname);
+    if ($nickname === '') {
+        return false;
+    }
+
+    $hasNicknameLocked = chat_has_column('chat_users', 'nickname_locked');
+    $lockSql = $hasNicknameLocked ? "AND nickname_locked = 1" : "";
+    $stmt = chat_db()->prepare(
+        "SELECT id
+         FROM chat_users
+         WHERE LOWER(nickname) = LOWER(:nickname)
+           {$lockSql}
+           AND id <> :exclude_id
+         LIMIT 1"
+    );
+    $stmt->execute([
+        ':nickname' => $nickname,
+        ':exclude_id' => max(0, (int)$excludeUserId)
+    ]);
+
+    return !$stmt->fetch(PDO::FETCH_ASSOC);
+}
+
 function chat_public_user($clientId, $nickname = '', $deviceHash = '', $lockRequestedNickname = true) {
     $db = chat_db();
     $requestedNickname = chat_clean_nickname($nickname);

@@ -13,6 +13,14 @@ if (!chat_nickname_is_valid($nickname)) {
     ], 422);
 }
 
+$currentUser = chat_public_user($clientId, '', $deviceHash, false);
+if (!chat_nickname_is_available($nickname, (int)$currentUser['id'])) {
+    chat_json([
+        'success' => false,
+        'error' => 'Ese nick ya esta registrado. Elige otro nombre para participar.'
+    ], 409);
+}
+
 $user = chat_public_user($clientId, $nickname, $deviceHash, true);
 
 chat_json([

@@ -124,6 +124,10 @@ if ($action === 'rename_user') {
         chat_json(['success' => false, 'error' => 'El nick debe tener de 3 a 40 caracteres e incluir letras.'], 422);
     }
 
+    if (!chat_nickname_is_available($nickname, $id)) {
+        chat_json(['success' => false, 'error' => 'Ese nick ya esta registrado por otro usuario.'], 409);
+    }
+
     $lockSql = chat_has_column('chat_users', 'nickname_locked') ? ", nickname_locked = 1" : "";
     $stmt = $db->prepare("UPDATE chat_users SET nickname = :nickname{$lockSql} WHERE id = :id");
     $stmt->execute([':nickname' => $nickname, ':id' => $id]);
