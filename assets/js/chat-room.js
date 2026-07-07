@@ -35,6 +35,7 @@
     els.name.value = state.nickname;
     setupNicknameConfirmation();
     setupNicknameToggle();
+    setupRoomInfoToggle();
 
     setupRadio();
     renderEmojiPalette();
@@ -309,6 +310,26 @@
         els.nameConfirmation.classList.toggle('hidden', clean === '');
         els.nameConfirmation.classList.toggle('is-confirmed', !!confirmed);
         els.nameConfirmation.classList.toggle('is-error', !!error);
+    }
+
+    function setupRoomInfoToggle() {
+        const header = root.querySelector('.chat-room-header');
+        if (!header || root.querySelector('[data-room-info-toggle]')) return;
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'chat-room-info-toggle';
+        toggle.dataset.roomInfoToggle = '1';
+        header.insertAdjacentElement('afterend', toggle);
+        els.infoToggle = toggle;
+        toggle.addEventListener('click', () => setRoomInfoPanel(root.classList.contains('is-info-collapsed')));
+        setRoomInfoPanel(window.matchMedia('(min-width: 761px)').matches);
+    }
+
+    function setRoomInfoPanel(open) {
+        root.classList.toggle('is-info-collapsed', !open);
+        if (!els.infoToggle) return;
+        els.infoToggle.innerHTML = `<span>Radio y en vivo</span><i class="fas fa-chevron-${open ? 'up' : 'down'}"></i>`;
+        els.infoToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
 
     function updatePinnedAnnouncement(text) {
