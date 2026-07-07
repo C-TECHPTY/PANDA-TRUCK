@@ -147,10 +147,10 @@
             els.panel.style.left = '0';
             els.panel.style.right = '0';
             els.panel.style.bottom = '0';
-            els.panel.style.top = 'auto';
+            els.panel.style.top = '8px';
             els.panel.style.width = '100vw';
-            els.panel.style.height = '68vh';
-            els.panel.style.maxHeight = '68vh';
+            els.panel.style.height = 'calc(100dvh - 8px)';
+            els.panel.style.maxHeight = 'calc(100dvh - 8px)';
         }
     }
 
