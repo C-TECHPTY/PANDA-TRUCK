@@ -331,7 +331,8 @@ function panda_push_broadcast(array $payload): array
     $settings = panda_push_settings($db);
 
     if (($settings['push_enabled'] ?? '0') !== '1') {
-        return ['success' => false, 'sent' => 0, 'failed' => 0, 'error' => 'Push no esta activado.'];
+        panda_push_log_notification($db, $payload, 0, 0);
+        return ['success' => true, 'sent' => 0, 'failed' => 0, 'native_app_queued' => true];
     }
 
     $stmt = $db->query("SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE active = 1 ORDER BY id DESC");
@@ -365,6 +366,13 @@ function panda_push_broadcast(array $payload): array
         }
     }
 
+    panda_push_log_notification($db, $payload, $sent, $failed);
+
+    return ['success' => true, 'sent' => $sent, 'failed' => $failed];
+}
+
+function panda_push_log_notification(PDO $db, array $payload, int $sent, int $failed): void
+{
     $log = $db->prepare("
         INSERT INTO push_notifications_log (title, body, target_url, sent_count, failed_count, created_by)
         VALUES (:title, :body, :target_url, :sent_count, :failed_count, :created_by)
@@ -377,8 +385,6 @@ function panda_push_broadcast(array $payload): array
         ':failed_count' => $failed,
         ':created_by' => $_SESSION['user_id'] ?? null,
     ]);
-
-    return ['success' => true, 'sent' => $sent, 'failed' => $failed];
 }
 
 function panda_push_new_mix(int $mixId): array

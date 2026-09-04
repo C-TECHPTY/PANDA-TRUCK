@@ -3,6 +3,7 @@
 header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/push.php';
 
 $auth->requireAdmin();
 
@@ -22,12 +23,26 @@ switch($action) {
         $status = $data['status'] ?? 'offline';
         $viewers = $data['viewers'] ?? 0;
         
+        $previousStmt = $db->prepare("SELECT title, live_status FROM videos WHERE id = :id LIMIT 1");
+        $previousStmt->execute([':id' => $id]);
+        $previous = $previousStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
         $stmt = $db->prepare("UPDATE videos SET live_status = :status, live_viewers = :viewers WHERE id = :id");
         $stmt->bindValue(':status', $status);
         $stmt->bindValue(':viewers', $viewers);
         $stmt->bindValue(':id', $id);
         
         if ($stmt->execute()) {
+            $liveValues = ['live', 'online', 'on', '1', 'active', 'en_vivo'];
+            $isLive = in_array(strtolower((string)$status), $liveValues, true);
+            $wasLive = in_array(strtolower((string)($previous['live_status'] ?? '')), $liveValues, true);
+            if ($isLive && !$wasLive) {
+                panda_push_broadcast([
+                    'title' => 'Ya estamos transmitiendo en vivo',
+                    'body' => (($previous['title'] ?? '') ?: 'Panda Truck Radio') . ' esta en vivo. Entra a escuchar.',
+                    'url' => SITE_URL . 'index.php#radio',
+                ]);
+            }
             echo json_encode(['success' => true]);
         } else {
             echo json_encode(['success' => false]);

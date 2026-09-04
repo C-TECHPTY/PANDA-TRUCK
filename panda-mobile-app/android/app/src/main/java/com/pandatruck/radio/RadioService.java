@@ -132,6 +132,7 @@ public class RadioService extends Service {
             Map<String, String> headers = new HashMap<String, String>();
             headers.put("User-Agent", "PandaTruckAndroidApp/3.1");
             headers.put("Accept", "audio/*,*/*");
+            headers.put("Referer", "https://pandatruckreloaded.com/");
             player.setDataSource(getApplicationContext(), Uri.parse(currentUrl), headers);
             player.prepareAsync();
         } catch (Exception e) {

@@ -21,7 +21,7 @@ $radio_name = $radio_name_row['config_value'] ?? 'Panda Truck Radio';
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/chat.css?v=20260707-room-info-toggle">
+    <link rel="stylesheet" href="assets/css/chat.css?v=20260903-chat-history">
 </head>
 <body class="chat-room-page">
     <main class="chat-room-shell" data-chat-room data-api-base="api/chat">
@@ -91,6 +91,6 @@ $radio_name = $radio_name_row['config_value'] ?? 'Panda Truck Radio';
     <script>
         window.PANDA_CHAT_ROOM_RADIO_URL = <?php echo json_encode($radio_url); ?>;
     </script>
-    <script src="assets/js/chat-room.js?v=20260707-room-info-toggle"></script>
+    <script src="assets/js/chat-room.js?v=20260903-chat-history"></script>
 </body>
 </html>

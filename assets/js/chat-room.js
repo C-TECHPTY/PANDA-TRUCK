@@ -25,8 +25,13 @@
         deviceHash: createDeviceHash(),
         nicknameLocked: false,
         lastId: 0,
+        firstId: 0,
         lastReactionId: 0,
         loading: false,
+        loadingOlder: false,
+        initialized: false,
+        browsingHistory: false,
+        unreadCount: 0,
         disabled: false,
         confirmNickname: ''
     };
@@ -36,6 +41,7 @@
     setupNicknameConfirmation();
     setupNicknameToggle();
     setupRoomInfoToggle();
+    setupMessageNavigation();
 
     setupRadio();
     renderEmojiPalette();
@@ -191,24 +197,41 @@
             nickname: nickname(),
             after_id: String(state.lastId)
         });
+        const shouldStick = !state.initialized || isNearBottom();
         request('messages.php?' + params.toString())
             .then((data) => {
                 if (!data.success) return;
                 if (data.messages.length && els.messages.querySelector('.live-chat-empty')) {
                     els.messages.innerHTML = '';
                 }
-                data.messages.forEach(addMessage);
+                data.messages.forEach((message) => addMessage(message, false));
+                const removedOlderMessages = pruneMessages('top');
+                if (!state.initialized) {
+                    updateOlderButton(data.has_more);
+                } else if (removedOlderMessages) {
+                    updateOlderButton(true);
+                }
+                if (shouldStick && !state.browsingHistory) {
+                    scrollToLatest();
+                } else if (data.messages.length) {
+                    state.unreadCount += data.messages.length;
+                    updateNewMessagesButton();
+                }
+                state.initialized = true;
             })
             .finally(() => {
                 state.loading = false;
             });
     }
 
-    function addMessage(message) {
+    function addMessage(message, prepend) {
         state.lastId = Math.max(state.lastId, Number(message.id));
+        state.firstId = state.firstId === 0 ? Number(message.id) : Math.min(state.firstId, Number(message.id));
+        if (els.messages.querySelector(`[data-message-id="${Number(message.id)}"]`)) return;
         const item = document.createElement('div');
         const isMe = message.sender_client_id === state.clientId;
         item.className = 'live-chat-message' + (isMe ? ' is-me' : '') + (message.is_private ? ' is-private' : '') + (message.is_featured ? ' is-featured' : '');
+        item.dataset.messageId = String(message.id);
         const badge = message.badge === 'crown' ? '<i class="fas fa-crown live-chat-badge"></i>' : message.badge === 'star' ? '<i class="fas fa-star live-chat-badge"></i>' : '';
         const roleLabel = message.badge === 'crown'
             ? '<span class="live-chat-role-label">Super Admin</span>'
@@ -217,14 +240,118 @@
                 : '';
         const featuredLabel = message.is_featured ? '<span class="live-chat-featured-label">Destacado</span>' : '';
         const privateLabel = message.is_private ? '<span>Privado</span>' : '';
+        const timeLabel = formatMessageTime(message.created_at);
         item.innerHTML = `
             <div class="live-chat-bubble">
-                <div class="live-chat-meta">${badge}<span>${escapeHtml(message.nickname)}</span>${roleLabel}${featuredLabel}${privateLabel}</div>
+                <div class="live-chat-meta">${badge}<span>${escapeHtml(message.nickname)}</span>${roleLabel}${featuredLabel}${privateLabel}<time>${timeLabel}</time></div>
                 <div class="live-chat-text">${escapeHtml(message.message)}</div>
             </div>
         `;
-        els.messages.appendChild(item);
+        if (prepend) {
+            els.messages.prepend(item);
+        } else {
+            els.messages.appendChild(item);
+        }
+    }
+
+    function setupMessageNavigation() {
+        const older = document.createElement('button');
+        older.type = 'button';
+        older.className = 'live-chat-history hidden';
+        older.textContent = 'Ver mensajes anteriores';
+        older.addEventListener('click', loadOlderMessages);
+        els.messages.before(older);
+        els.olderMessages = older;
+
+        const newer = document.createElement('button');
+        newer.type = 'button';
+        newer.className = 'live-chat-new-messages hidden';
+        newer.addEventListener('click', scrollToLatest);
+        els.messages.parentElement.appendChild(newer);
+        els.newMessages = newer;
+        els.messages.addEventListener('scroll', () => {
+            if (isNearBottom()) {
+                state.unreadCount = 0;
+                updateNewMessagesButton();
+            }
+        }, { passive: true });
+    }
+
+    function loadOlderMessages() {
+        if (state.loadingOlder || state.firstId <= 0) return;
+        state.loadingOlder = true;
+        els.olderMessages.disabled = true;
+        const oldHeight = els.messages.scrollHeight;
+        const params = new URLSearchParams({
+            client_id: state.clientId,
+            device_hash: state.deviceHash,
+            nickname: nickname(),
+            before_id: String(state.firstId)
+        });
+        request('messages.php?' + params.toString()).then((data) => {
+            if (!data.success) return;
+            data.messages.slice().reverse().forEach((message) => addMessage(message, true));
+            state.browsingHistory = pruneMessages('bottom') || state.browsingHistory;
+            els.messages.scrollTop += els.messages.scrollHeight - oldHeight;
+            updateOlderButton(data.has_more);
+            updateNewMessagesButton();
+        }).catch(() => showInlineNotice('No se pudieron cargar mensajes anteriores.')).finally(() => {
+            state.loadingOlder = false;
+            els.olderMessages.disabled = false;
+        });
+    }
+
+    function pruneMessages(side) {
+        const items = () => els.messages.querySelectorAll('.live-chat-message[data-message-id]');
+        let removed = false;
+        while (items().length > 100) {
+            const list = items();
+            list[side === 'bottom' ? list.length - 1 : 0].remove();
+            removed = true;
+        }
+        const remaining = items();
+        state.firstId = remaining.length ? Number(remaining[0].dataset.messageId) : 0;
+        return removed;
+    }
+
+    function isNearBottom() {
+        return els.messages.scrollHeight - els.messages.scrollTop - els.messages.clientHeight < 80;
+    }
+
+    function scrollToLatest() {
+        if (state.browsingHistory) {
+            state.browsingHistory = false;
+            state.unreadCount = 0;
+            state.lastId = 0;
+            state.firstId = 0;
+            state.initialized = false;
+            els.messages.innerHTML = '';
+            updateNewMessagesButton();
+            loadMessages();
+            return;
+        }
         els.messages.scrollTop = els.messages.scrollHeight;
+        state.unreadCount = 0;
+        updateNewMessagesButton();
+    }
+
+    function updateOlderButton(show) {
+        if (els.olderMessages) els.olderMessages.classList.toggle('hidden', !show);
+    }
+
+    function updateNewMessagesButton() {
+        if (!els.newMessages) return;
+        els.newMessages.textContent = state.browsingHistory
+            ? '\u2193 Volver a mensajes recientes'
+            : `\u2193 ${state.unreadCount} mensaje${state.unreadCount === 1 ? '' : 's'} nuevo${state.unreadCount === 1 ? '' : 's'}`;
+        els.newMessages.classList.toggle('hidden', !state.browsingHistory && state.unreadCount === 0);
+    }
+
+    function formatMessageTime(value) {
+        if (!value) return '';
+        const date = new Date(String(value).replace(' ', 'T'));
+        if (Number.isNaN(date.getTime())) return '';
+        return escapeHtml(date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     }
 
     function sendMessage(event) {
@@ -262,7 +389,7 @@
         item.className = 'live-chat-message';
         item.innerHTML = `<div class="live-chat-bubble"><div class="live-chat-text">${escapeHtml(text)}</div></div>`;
         els.messages.appendChild(item);
-        els.messages.scrollTop = els.messages.scrollHeight;
+        scrollToLatest();
     }
 
     function setupNicknameConfirmation() {

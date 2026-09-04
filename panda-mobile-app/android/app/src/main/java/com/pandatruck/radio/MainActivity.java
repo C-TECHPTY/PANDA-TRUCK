@@ -22,6 +22,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.LruCache;
 import android.view.Gravity;
 import android.view.View;
 import android.webkit.WebChromeClient;
@@ -54,6 +55,17 @@ public class MainActivity extends Activity {
     private Handler handler = new Handler(Looper.getMainLooper());
     private SharedPreferences prefs;
     private Runnable noticePoller;
+    private JSONArray currentMixes;
+    private int renderedMixes;
+    private LinearLayout mixesBox;
+    private Button loadMoreMixesButton;
+    private static final int MIX_PAGE_SIZE = 12;
+    private static final LruCache<String, Bitmap> IMAGE_CACHE = new LruCache<String, Bitmap>(12 * 1024) {
+        @Override
+        protected int sizeOf(String key, Bitmap bitmap) {
+            return bitmap.getByteCount() / 1024;
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +74,9 @@ public class MainActivity extends Activity {
         requestNotificationPermission();
         createNoticeChannel();
         buildShell();
-        showRadio();
+        if ("mixes".equals(getIntent().getStringExtra("open_section"))) showMixes();
+        else showRadio();
+        NotificationPollReceiver.schedule(this);
         startNoticePolling();
     }
 
@@ -211,31 +225,82 @@ public class MainActivity extends Activity {
         clearContent();
         final ScrollView scroll = new ScrollView(this);
         final LinearLayout box = page();
+        mixesBox = box;
         box.addView(sectionHeader("Mixes", "Ultimos mixes subidos"));
         box.addView(small("Cargando mixes..."));
         scroll.addView(box);
         content.addView(scroll, match());
 
+        String cached = prefs.getString("cached_mixes", "");
+        if (cached.length() > 0) {
+            try {
+                renderMixes(box, new JSONObject(cached));
+            } catch (Exception ignored) {
+            }
+        }
+
         new JsonTask(new JsonTask.Callback() {
             public void done(JSONObject object, JSONArray ignored) {
-                box.removeAllViews();
-                box.addView(sectionHeader("Mixes", "Ultimos mixes subidos"));
-                JSONArray mixes = object != null ? object.optJSONArray("mixes") : null;
-                if (mixes == null || mixes.length() == 0) {
-                    box.addView(small("No se pudieron cargar mixes."));
-                    return;
-                }
-                int count = Math.min(mixes.length(), 80);
-                for (int i = 0; i < count; i++) {
-                    JSONObject item = mixes.optJSONObject(i);
-                    if (item != null) box.addView(mixCard(item));
-                }
+                if (box.getParent() == null || object == null) return;
+                prefs.edit().putString("cached_mixes", object.toString()).apply();
+                renderMixes(box, object);
             }
         }).execute(SITE + "api/app_mixes.php?limit=40");
     }
 
+    private void renderMixes(LinearLayout box, JSONObject object) {
+        box.removeAllViews();
+        box.addView(sectionHeader("Mixes", "Ultimos mixes subidos"));
+        currentMixes = object != null ? object.optJSONArray("mixes") : null;
+        renderedMixes = 0;
+        loadMoreMixesButton = null;
+        if (currentMixes == null || currentMixes.length() == 0) {
+            box.addView(small("No se pudieron cargar mixes."));
+            return;
+        }
+        appendNextMixes();
+    }
+
+    private void appendNextMixes() {
+        if (mixesBox == null || currentMixes == null) return;
+        if (loadMoreMixesButton != null) {
+            mixesBox.removeView(loadMoreMixesButton);
+            loadMoreMixesButton = null;
+        }
+        int end = Math.min(renderedMixes + MIX_PAGE_SIZE, currentMixes.length());
+        for (int i = renderedMixes; i < end; i++) {
+            JSONObject item = currentMixes.optJSONObject(i);
+            if (item != null) mixesBox.addView(mixCard(item));
+        }
+        renderedMixes = end;
+        if (renderedMixes < currentMixes.length()) {
+            loadMoreMixesButton = darkButton("Cargar mas mixes");
+            loadMoreMixesButton.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) { appendNextMixes(); }
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, dp(50));
+            lp.setMargins(0, dp(8), 0, dp(18));
+            mixesBox.addView(loadMoreMixesButton, lp);
+        }
+    }
+
     private View mixCard(final JSONObject item) {
         LinearLayout card = card();
+        final String audioUrl = item.optString("audio_url", "");
+        final String fallbackAudioUrl = firstAvailable(
+                item.optString("audio_fallback_url", ""),
+                backblazeFallback(audioUrl)
+        );
+        final String downloadUrl = firstAvailable(
+                item.optString("download_url", ""),
+                item.optInt("id") > 0 ? SITE + "api/download_mix.php?id=" + item.optInt("id") : ""
+        );
+        final String directDownloadUrl = firstAvailable(
+                fallbackAudioUrl,
+                firstAvailable(item.optString("direct_download_url", ""), audioUrl)
+        );
+        final int mixId = item.optInt("id");
 
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
@@ -257,15 +322,16 @@ public class MainActivity extends Activity {
         Button listen = darkButton("Escuchar");
         listen.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                playMix(item.optString("audio_url", ""), item.optString("audio_fallback_url", ""), item.optString("title", "Mix"));
+                playMix(firstAvailable(fallbackAudioUrl, audioUrl), audioUrl, item.optString("title", "Mix"));
             }
         });
         Button download = primaryButton("Descargar");
         download.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                trackMixDownload(mixId);
                 downloadMix(
-                        item.optString("download_url", ""),
-                        item.optString("direct_download_url", item.optString("audio_fallback_url", "")),
+                        directDownloadUrl,
+                        downloadUrl,
                         item.optString("title", "mix")
                 );
             }
@@ -528,7 +594,47 @@ public class MainActivity extends Activity {
         intent.putExtra(RadioService.EXTRA_LIVE, false);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent);
         else startService(intent);
-        Toast.makeText(this, "Reproduciendo mix", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Conectando con el mix...", Toast.LENGTH_SHORT).show();
+    }
+
+    private String firstAvailable(String preferred, String fallback) {
+        if (preferred != null && preferred.trim().length() > 0) return preferred.trim();
+        return fallback == null ? "" : fallback.trim();
+    }
+
+    private String backblazeFallback(String url) {
+        if (url == null) return "";
+        String cdnPrefix = "https://panda-truck.b-cdn.net/";
+        if (url.startsWith(cdnPrefix)) {
+            return "https://f005.backblazeb2.com/file/" + url.substring(cdnPrefix.length());
+        }
+        return "";
+    }
+
+    private String addDownloadFlag(String url) {
+        if (url == null || url.length() == 0) return "";
+        return url + (url.contains("?") ? "&" : "?") + "download=1";
+    }
+
+    private void trackMixDownload(final int mixId) {
+        if (mixId <= 0) return;
+        new AsyncTask<Void, Void, Void>() {
+            protected Void doInBackground(Void... ignored) {
+                HttpURLConnection conn = null;
+                try {
+                    conn = (HttpURLConnection) new URL(SITE + "api/download_mix.php?id=" + mixId).openConnection();
+                    conn.setInstanceFollowRedirects(false);
+                    conn.setConnectTimeout(8000);
+                    conn.setReadTimeout(8000);
+                    conn.setRequestMethod("GET");
+                    conn.getResponseCode();
+                } catch (Exception ignoredException) {
+                } finally {
+                    if (conn != null) conn.disconnect();
+                }
+                return null;
+            }
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     private void downloadMix(String url, String fallbackUrl, String title) {
@@ -539,11 +645,26 @@ public class MainActivity extends Activity {
             if (url == null || url.length() == 0) {
                 Toast.makeText(this, "Descarga no disponible", Toast.LENGTH_SHORT).show();
             } else {
-                openExternal(url);
-                Toast.makeText(this, "Abriendo descarga", Toast.LENGTH_SHORT).show();
+                DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+                request.setTitle(title == null || title.length() == 0 ? "Panda Truck Mix" : title);
+                request.setDescription("Descargando mix de Panda Truck");
+                request.setMimeType("audio/mpeg");
+                request.addRequestHeader("User-Agent", "AndroidDownloadManager PandaTruck/1.3");
+                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                request.setAllowedOverMetered(true);
+                request.setAllowedOverRoaming(false);
+                request.setDestinationInExternalPublicDir(
+                        Environment.DIRECTORY_DOWNLOADS,
+                        safeFilename(title) + "_" + System.currentTimeMillis() + ".mp3"
+                );
+                DownloadManager manager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                if (manager == null) throw new IllegalStateException("DownloadManager no disponible");
+                manager.enqueue(request);
+                Toast.makeText(this, "Descarga iniciada", Toast.LENGTH_SHORT).show();
             }
         } catch (Exception e) {
-            if (fallbackUrl != null && fallbackUrl.length() > 0) openExternal(fallbackUrl);
+            String alternative = fallbackUrl != null && fallbackUrl.length() > 0 ? fallbackUrl : url;
+            if (alternative != null && alternative.length() > 0) openExternal(alternative);
         }
     }
 
@@ -565,7 +686,13 @@ public class MainActivity extends Activity {
 
     private void loadImage(ImageView view, String url) {
         if (url == null || url.length() == 0) return;
-        new ImageTask(view).execute(url);
+        Bitmap cached = IMAGE_CACHE.get(url);
+        if (cached != null) {
+            view.setPadding(0, 0, 0, 0);
+            view.setImageBitmap(cached);
+            return;
+        }
+        new ImageTask(view, url).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, url);
     }
 
     private void startNoticePolling() {
@@ -584,6 +711,15 @@ public class MainActivity extends Activity {
             public void done(JSONObject object, JSONArray ignored) {
                 JSONArray notifications = object != null ? object.optJSONArray("notifications") : null;
                 if (notifications == null) return;
+                if (prefs.getInt("last_notice_id", 0) == 0) {
+                    int newestId = 0;
+                    for (int i = 0; i < notifications.length(); i++) {
+                        JSONObject existing = notifications.optJSONObject(i);
+                        if (existing != null) newestId = Math.max(newestId, existing.optInt("id"));
+                    }
+                    if (newestId > 0) prefs.edit().putInt("last_notice_id", newestId).apply();
+                    return;
+                }
                 for (int i = 0; i < notifications.length(); i++) {
                     JSONObject notice = notifications.optJSONObject(i);
                     if (notice == null) continue;
@@ -692,9 +828,11 @@ public class MainActivity extends Activity {
 
     static class ImageTask extends AsyncTask<String, Void, Bitmap> {
         private ImageView target;
+        private String cacheKey;
 
-        ImageTask(ImageView target) {
+        ImageTask(ImageView target, String cacheKey) {
             this.target = target;
+            this.cacheKey = cacheKey;
         }
 
         protected Bitmap doInBackground(String... urls) {
@@ -714,6 +852,7 @@ public class MainActivity extends Activity {
 
         protected void onPostExecute(Bitmap bitmap) {
             if (bitmap != null && target != null) {
+                IMAGE_CACHE.put(cacheKey, bitmap);
                 target.setPadding(0, 0, 0, 0);
                 target.setImageBitmap(bitmap);
             }
