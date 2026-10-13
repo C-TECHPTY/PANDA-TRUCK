@@ -64,3 +64,6 @@ panda-mobile-app/android/release/
 # OS/editor noise
 .DS_Store
 Thumbs.db
+
+# Backblaze server-only upload credentials
+includes/backblaze.local.php

@@ -1430,6 +1430,15 @@ $cdn_audio_enabled = cdn_audio_enabled();
     <div id="passwordModal" class="modal"><div class="modal-content p-4"><div class="flex justify-between items-center mb-3"><h3 class="text-lg font-bold">Cambiar Contraseña</h3><button onclick="closePasswordModal()" class="text-2xl hover:text-primary">&times;</button></div><form id="change-password-admin-form" class="space-y-3"><input type="hidden" id="change-user-id"><div><label>Usuario</label><input type="text" id="change-username" readonly class="w-full p-2 bg-neutral-800 rounded opacity-70"></div><div><label>Nueva Contraseña</label><input type="password" id="new-password-admin" required class="w-full p-2 bg-neutral-800 rounded"></div><div><label>Confirmar</label><input type="password" id="confirm-password-admin" required class="w-full p-2 bg-neutral-800 rounded"></div><div class="flex gap-2 pt-2"><button type="button" onclick="closePasswordModal()" class="flex-1 p-2 bg-neutral-700 rounded">Cancelar</button><button type="submit" class="flex-1 p-2 bg-primary rounded">Cambiar</button></div></form></div></div>
     <div id="toast" class="toast"></div>
     
+    <?php if (in_array($user_role, ['admin', 'superadmin'], true)): ?>
+    <?php
+        if (empty($_SESSION['b2_csrf'])) $_SESSION['b2_csrf'] = bin2hex(random_bytes(32));
+    ?>
+    <script>window.pandaB2Csrf = <?php echo json_encode($_SESSION['b2_csrf']); ?>;</script>
+    <script src="assets/js/backblaze-upload.js" defer></script>
+    <?php endif; ?>
+
+
     <script>
         // ==================== CERRAR SESIÓN ====================
         function cerrarSesionManual() {
