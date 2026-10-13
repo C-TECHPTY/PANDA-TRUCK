@@ -1,0 +1,4 @@
+# Prevent HTTP access to local configuration (Apache 2.4 / cPanel).
+<FilesMatch "^(config|backblaze)\.local(\.example)?\.php$">
+    Require all denied
+</FilesMatch>
